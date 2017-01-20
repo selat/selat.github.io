@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>yandex-music-web-api.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="YandexMusicWebApi.html">YandexMusicWebApi</a><ul class='methods'><li data-type='method'><a href="YandexMusicWebApi.html#downloadTrack">downloadTrack</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getAlbum">getAlbum</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getAlbumCoverUri">getAlbumCoverUri</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getArtist">getArtist</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getFeed">getFeed</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getTrack">getTrack</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getUserAlbums">getUserAlbums</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getUserArtists">getUserArtists</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getUserPlaylists">getUserPlaylists</a></li><li data-type='method'><a href="YandexMusicWebApi.html#getUserTracks">getUserTracks</a></li><li data-type='method'><a href="YandexMusicWebApi.html#search">search</a></li><li data-type='method'><a href="YandexMusicWebApi.html#searchAlbums">searchAlbums</a></li><li data-type='method'><a href="YandexMusicWebApi.html#searchAll">searchAll</a></li><li data-type='method'><a href="YandexMusicWebApi.html#searchArtists">searchArtists</a></li><li data-type='method'><a href="YandexMusicWebApi.html#searchPlaylists">searchPlaylists</a></li><li data-type='method'><a href="YandexMusicWebApi.html#searchTracks">searchTracks</a></li></ul></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">yandex-music-web-api.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var url = require('url')
+var querystring = require('querystring')
+var https = require('https')
+var hash = require('./yandexhash')
+
+/**
+* Create object
+* @constructor
+*/
+function YandexMusicWebApi () {
+  this.headers = {
+    'X-Retpath-Y': 'https%3A%2F%2Fmusic.yandex.ru%2F',
+    'Cookie': ''
+  }
+}
+
+YandexMusicWebApi.prototype.setCookie = function (cookie) {
+  this.headers.Cookie = cookie
+}
+
+YandexMusicWebApi.prototype.getBlob = function (hostname, path, partialCallback, completeCallback) {
+  var options = {
+    hostname: hostname,
+    path: path,
+    headers: this.headers
+  }
+  https.get(options, (res) => {
+    res.on('data', partialCallback)
+    res.on('end', completeCallback)
+  })
+}
+
+YandexMusicWebApi.prototype.get = function (hostname, path, callback) {
+  var options = {
+    hostname: hostname,
+    path: path,
+    headers: this.headers
+  }
+  https.get(options, (res) => {
+    var rawData = ''
+    res.setEncoding('utf8')
+    res.on('data', (chunk) => rawData += chunk)
+    res.on('end', () => {
+      callback(rawData)
+    })
+  })
+}
+
+YandexMusicWebApi.prototype.getJson = function (hostname, path, callback) {
+  this.get(hostname, path, (data) => {
+    callback(JSON.parse(data))
+  })
+}
+
+YandexMusicWebApi.prototype.downloadMedia = function (data, trackId, partialCallback, completeCallback) {
+  var hasht = hash.hash(data['path'].substring(1) + data['s'])
+  var path = '/get-mp3/' + hasht + '/' + data['ts'] + data['path'] + '?track-id=' + trackId
+  this.getBlob(data['host'], path, partialCallback, completeCallback)
+}
+
+YandexMusicWebApi.prototype.fetchMedia = function (srcUrl, trackId, partialCallback, completeCallback) {
+  var query = querystring.stringify({
+    format: 'json'
+  })
+  this.getJson(srcUrl.hostname, srcUrl.path + '&amp;' + query, (js) => {
+    this.downloadMedia(js, trackId, partialCallback, completeCallback)
+  })
+}
+
+/**
+* Download track as mp3 file
+*
+* @param {int} trackId
+* @param {int} albumId
+* @param {callback} partialCallback
+* @param {callback} completeCallback
+*/
+YandexMusicWebApi.prototype.downloadTrack = function (trackId, albumId, partialCallback, completeCallback) {
+  var path = '/api/v2.1/handlers/track/' + trackId + ':' + albumId +
+  '/web-feed-promotion-playlist-saved/download/m?hq=0'
+  this.getJson('music.yandex.ru', path, (js) => {
+    this.fetchMedia(url.parse(js['src']), trackId, partialCallback, completeCallback)
+  })
+}
+
+/**
+* Get information about the album
+*
+* @param {albumId}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getAlbum = function (albumId, callback) {
+  var query = querystring.stringify({
+    album: albumId
+  })
+  this.getJson('music.yandex.ru', '/handlers/album.jsx?' + query, callback)
+}
+
+/**
+* Get information about the track
+*
+* @param {trackId}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getTrack = function (trackId, albumId, callback) {
+  var query = querystring.stringify({
+    track: trackId + ':' + albumId
+  })
+  this.getJson('music.yandex.ru', '/handlers/track.jsx?' + query, callback)
+}
+
+/**
+* Get information about the artist
+*
+* @param {artistId}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getArtist = function (artistId, callback) {
+  var query = querystring.stringify({
+    artist: artistId
+  })
+  this.getJson('music.yandex.ru', '/handlers/artist.jsx?' + query, callback)
+}
+
+/**
+* Fetch user's feed. Available only if your specified a valid cookie.
+*
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getFeed = function (callback) {
+  this.getJson('music.yandex.ru', '/handlers/feed.jsx', callback)
+}
+
+YandexMusicWebApi.prototype.getLibrary = function (ownerNick, filter, callback) {
+  // Unknown options:
+  // likeFilter=favorite
+  // lang=tur
+  // external-domain=music.yandex.ru
+  // overembed=false
+  // ncrnd=0.03142031434416881
+  var query = querystring.stringify({
+    owner: ownerNick,
+    filter: filter,
+    likeFilter: 'favorite'
+  })
+  this.getJson('music.yandex.ru', '/handlers/library.jsx?' + query, callback)
+}
+
+/**
+* Get url to the album cover image.
+*
+* @param {album}
+* @param {size} Maximum supported size is 500x500
+*/
+YandexMusicWebApi.prototype.getAlbumCoverUri = function (album, size) {
+  return album.coverUri.substr(0, album.coverUri.length - 2) + size + 'x' + size
+}
+
+/**
+* Search some stuff.
+*
+* @param {query}
+* @param {searchType}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.search = function (query, searchType, callback) {
+  var urlQuery = querystring.stringify({
+    text: query,
+    type: searchType})
+  // page=pageId
+  // Unknown parameters:
+  // lang=ru
+  // overembed=false
+  // ncrnd=0.49198139212100345
+  this.getJson('music.yandex.ru', '/handlers/music-search.jsx?' + urlQuery,
+                  callback)
+}
+
+/**
+* Search for albums.
+*
+* @param {query}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.searchAlbums = function (query, callback) {
+  this.search(query, 'albums', (js) => {
+    callback(js.albums)
+  })
+}
+
+/**
+* Search for playlists.
+*
+* @param {query}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.searchPlaylists = function (query, callback) {
+  this.search(query, 'playlists', (js) => {
+    callback(js.playlists)
+  })
+}
+
+/**
+* Search for tracks.
+*
+* @param {query}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.searchTracks = function (query, callback) {
+  this.search(query, 'tracks', (js) => {
+    callback(js.tracks)
+  })
+}
+
+/**
+* Search for artists.
+*
+* @param {query}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.searchArtists = function (query, callback) {
+  this.search(query, 'artists', (js) => {
+    callback(js.artists)
+  })
+}
+
+/**
+* Search for everything.
+*
+* @param {query}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.searchAll = function (query, callback) {
+  this.search(query, 'all', callback)
+}
+
+/**
+* Get user albums.
+*
+* @param {ownerNickname}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getUserAlbums = function (ownerNickname, callback) {
+  this.getLibrary(ownerNickname, 'albums', (js) => {
+    callback(js)
+  })
+}
+
+/**
+* Get user playlists.
+*
+* @param {ownerNickname}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getUserPlaylists = function (ownerNickname, callback) {
+  this.getLibrary(ownerNickname, 'playlists', (js) => {
+    callback(js)
+  })
+}
+
+/**
+* Get user tracks.
+*
+* @param {ownerNickname}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getUserTracks = function (ownerNickname, callback) {
+  this.getLibrary(ownerNickname, 'tracks', (js) => {
+    callback(js)
+  })
+}
+
+/**
+* Get user artists.
+*
+* @param {ownerNickname}
+* @param {callback}
+*/
+YandexMusicWebApi.prototype.getUserArtists = function (ownerNickname, callback) {
+  this.getLibrary(ownerNickname, 'artists', (js) => {
+    callback(js)
+  })
+}
+
+exports.YandexMusicWebApi = YandexMusicWebApi
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Fri Jan 20 2017 08:47:43 GMT+0300 (+03) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
