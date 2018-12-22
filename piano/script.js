@@ -28,13 +28,14 @@ function startApp() {
     context.beginPath();
     var arcCenterX = 0.4 * canvas.width + 0.2 * canvas.width * id;
     var arcCenterY = 0.15 * canvas.height + 0.05 * canvas.height * noteId;
-    context.arc(arcCenterX, arcCenterY, 17, 0, 2 * Math.PI);
-    context.moveTo(arcCenterX + 17, arcCenterY);
-    var topY = arcCenterY - 105;
+    var noteRadius = 0.034 * canvas.width;
+    context.arc(arcCenterX, arcCenterY, noteRadius, 0, 2 * Math.PI);
+    context.moveTo(arcCenterX + noteRadius, arcCenterY);
+    var topY = arcCenterY - 0.21 * canvas.height;
     if (noteId < 5) {
-      topY = arcCenterY + 105;
+      topY = arcCenterY + 0.21 * canvas.height;
     }
-    context.lineTo(arcCenterX + 17, topY);
+    context.lineTo(arcCenterX + noteRadius, topY);
     context.stroke();
 
     id += 1;
