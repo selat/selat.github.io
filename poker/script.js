@@ -51,6 +51,48 @@ function recalculate() {
     totalBuyInsField.innerHTML = totalBuyIns;
     totalChipsField.innerHTML = totalChips;
     totalDeltaField.innerHTML = totalDelta.toFixed(2);
+
+    saveState();
+}
+
+function saveState() {
+    const state = {};
+    state.buyInSize = parseFloat(buyInSizeField.value);
+    state.buyInChips = parseInt(buyInChipsField.value);
+    state.players = [];
+
+    for (var i = 0; i < rowsNumber; i++) {
+        const playerName = players[i].name.value;
+        const playerBuyIns = parseInt(players[i].buyIns.value);
+        const chips = parseInt(players[i].chips.value);
+
+        state.players.push({
+            name: playerName,
+            buyIns: playerBuyIns,
+            chips: chips,
+        });
+    }
+
+    sessionStorage.setItem("poker_state", JSON.stringify(state));
+}
+
+function loadState() {
+    if (sessionStorage.getItem("poker_state") != null) {
+        const loadedState = JSON.parse(sessionStorage.getItem("poker_state"));
+        buyInSizeField.value = loadedState.buyInSize;
+        buyInChipsField.value = loadedState.buyInChips;
+
+        for (var i = 0; i < loadedState.players.length; i++) {
+            addRow();
+            players[i].name.value = loadedState.players[i].name;
+            players[i].buyIns.value = loadedState.players[i].buyIns;
+            players[i].chips.value = loadedState.players[i].chips;
+        }
+        rowsNumber = loadedState.players.length;
+    } else {
+        addRow();
+    }
+    recalculate();
 }
 
 function solve() {
@@ -111,5 +153,4 @@ const totalBuyInsField = document.getElementById("totalBuyInsField");
 const totalChipsField = document.getElementById("totalChipsField");
 const totalDeltaField = document.getElementById("totalDeltaField");
 
-addRow();
-recalculate();
+loadState();
