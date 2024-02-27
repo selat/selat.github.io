@@ -7,90 +7,92 @@
 </head>
 
 <body>
-  <form id="form">
-    <h1>Poker Winnings Calculator</h1>
-    <fieldset>
-      <label for="buyInSizeField">Buy-In Size</label>
-      <input type="number" value="20" id="buyInSizeField" onchange="recalculate()">
+  <div class="container">
+    <form id="form">
+      <h1>Poker Winnings Calculator</h1>
+      <fieldset>
+        <label for="buyInSizeField">Buy-In Size</label>
+        <input type="number" value="20" id="buyInSizeField" onchange="recalculate()">
 
-      <label for="buyInChipsField">Buy-In Chips</label>
-      <input type="number" value="2000" id="buyInChipsField" onchange="recalculate()">
-    </fieldset>
+        <label for="buyInChipsField">Buy-In Chips</label>
+        <input type="number" value="2000" id="buyInChipsField" onchange="recalculate()">
+      </fieldset>
+
+      <table>
+        <thread>
+          <tr>
+            <th>Name</th>
+            <th>Buy-ins</th>
+            <th>Chips</th>
+            <th>Delta</th>
+            <th>Remove</th>
+          </tr>
+        </thread>
+        <tbody id="rowsContainer">
+          <template id="rowTemplate" data-rowNumber="0">
+            <tr class="playerRow" data-rowNumber="0">
+              <td>
+                <input type="text" value="Player 1" id="nameField" class="nameField" onchange="saveState()">
+              </td>
+      
+              <td>
+                <input type="number" value="1" id="buyInsField" onchange="recalculate()">
+              </td>
+      
+              <td>
+                <input type="number" value="2000" id="chipsField" onchange="recalculate()">
+              </td>
+      
+              <td>
+                <input type="text" value="0" id="deltaField" readonly class="deltaField">
+              </td>
+      
+              <td>
+                <input class="button-primary" type="button" value="Remove" onclick="removeRow(this.parentNode.parentNode)">
+              </td>
+            </tr>
+          </template>
+        </tbody>
+
+        <tfood>
+          <tr>
+            <td>Total</td>
+            <td id="totalBuyInsField">0</td>
+            <td id="totalChipsField">0</td>
+            <td id="totalDeltaField">0</td>
+            <td></td>
+          </tr>
+        </tfood>
+      </table>
+
+      <fieldset>
+        <input class="button-primary" type="button" value="Add Player" onclick="addRow()">
+        <input class="button-primary" type="button" value="Solve" onclick="solve()">
+      </fieldset>
+    </form>
 
     <table>
-      <thread>
+      <thead>
         <tr>
-          <th>Name</th>
-          <th>Buy-ins</th>
-          <th>Chips</th>
-          <th>Delta</th>
-          <th>Remove</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Amount</th>
         </tr>
-      </thread>
-      <tbody id="rowsContainer">
-        <template id="rowTemplate" data-rowNumber="0">
-          <tr class="playerRow" data-rowNumber="0">
-            <td>
-              <input type="text" value="Player 1" id="nameField" class="nameField" onchange="saveState()">
-            </td>
-    
-            <td>
-              <input type="number" value="1" id="buyInsField" onchange="recalculate()">
-            </td>
-    
-            <td>
-              <input type="number" value="2000" id="chipsField" onchange="recalculate()">
-            </td>
-    
-            <td>
-              <input type="text" value="0" id="deltaField" readonly class="deltaField">
-            </td>
-    
-            <td>
-              <input class="button-primary" type="button" value="Remove" onclick="removeRow(this.parentNode.parentNode)">
-            </td>
-          </tr>
-        </template>
-      </tbody>
+      </thead>
 
-      <tfood>
-        <tr>
-          <td>Total</td>
-          <td id="totalBuyInsField">0</td>
-          <td id="totalChipsField">0</td>
-          <td id="totalDeltaField">0</td>
-          <td></td>
+      <template id="transferTemplate">
+        <tr class="transferRow">
+          <td id="fromPlayerField"></td>
+
+          <td id="toPlayerField"></td>
+
+          <td id="amountField"></td>
         </tr>
-      </tfood>
+      </template>
+
+      <tbody id="transfersContainer"></tbody>
     </table>
-
-    <fieldset>
-      <input class="button-primary" type="button" value="Add Player" onclick="addRow()">
-      <input class="button-primary" type="button" value="Solve" onclick="solve()">
-    </fieldset>
-  </form>
-
-  <table>
-    <thead>
-      <tr>
-        <th>From</th>
-        <th>To</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-
-    <template id="transferTemplate">
-      <tr class="transferRow">
-        <td id="fromPlayerField"></td>
-
-        <td id="toPlayerField"></td>
-
-        <td id="amountField"></td>
-      </tr>
-    </template>
-
-    <tbody id="transfersContainer"></tbody>
-  </table>
+  </div>
 
   <script src="script.js"></script>
 </body>

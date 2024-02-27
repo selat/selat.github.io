@@ -131,13 +131,13 @@ function solve() {
         children.push(newTransfer);
 
         debts[0] -= transferAmount;
-        if (debts[0] == 0) {
+        if (debts[0] <= 0.0001) {
             debts.shift();
             debtorNames.shift();
         }
 
         credits[credits.length - 1] -= transferAmount;
-        if (credits[credits.length - 1] == 0) {
+        if (credits[credits.length - 1] <= 0.0001) {
             credits.pop();
             creditorNames.pop();
         }
