@@ -3,18 +3,135 @@
     "id": 1,
     "name": "John Doe",
     "email": "john@example.com",
-    "role": "admin"
+    "role": "admin",
+    "profile": {
+      "age": 35,
+      "address": {
+        "street": "123 Main St",
+        "city": "New York",
+        "country": "USA",
+        "coordinates": {
+          "latitude": 40.7128,
+          "longitude": -74.0060
+        }
+      },
+      "preferences": {
+        "theme": "dark",
+        "notifications": {
+          "email": true,
+          "push": false,
+          "sms": true
+        }
+      }
+    },
+    "orders": [
+      {
+        "orderId": "ORD-001",
+        "date": "2024-01-15",
+        "items": [
+          {
+            "productId": "P-101",
+            "name": "Laptop",
+            "price": 999.99,
+            "quantity": 1,
+            "specs": {
+              "cpu": "Intel i7",
+              "ram": "16GB",
+              "storage": "512GB SSD"
+            }
+          },
+          {
+            "productId": "P-102",
+            "name": "Mouse",
+            "price": 49.99,
+            "quantity": 2
+          }
+        ],
+        "shipping": {
+          "method": "express",
+          "address": {
+            "street": "123 Main St",
+            "city": "New York",
+            "country": "USA"
+          },
+          "status": "delivered"
+        }
+      },
+      {
+        "orderId": "ORD-002",
+        "date": "2024-02-20",
+        "items": [
+          {
+            "productId": "P-103",
+            "name": "Keyboard",
+            "price": 79.99,
+            "quantity": 1
+          }
+        ],
+        "shipping": {
+          "method": "standard",
+          "address": {
+            "street": "123 Main St",
+            "city": "New York",
+            "country": "USA"
+          },
+          "status": "in-transit"
+        }
+      }
+    ]
   },
   {
     "id": 2,
     "name": "Jane Smith",
     "email": "jane@example.com",
-    "role": "user"
-  },
-  {
-    "id": 3,
-    "name": "Bob Johnson",
-    "email": "bob@example.com",
-    "role": "user"
+    "role": "user",
+    "profile": {
+      "age": 28,
+      "address": {
+        "street": "456 Oak Ave",
+        "city": "Los Angeles",
+        "country": "USA",
+        "coordinates": {
+          "latitude": 34.0522,
+          "longitude": -118.2437
+        }
+      },
+      "preferences": {
+        "theme": "light",
+        "notifications": {
+          "email": true,
+          "push": true,
+          "sms": false
+        }
+      }
+    },
+    "orders": [
+      {
+        "orderId": "ORD-003",
+        "date": "2024-03-01",
+        "items": [
+          {
+            "productId": "P-104",
+            "name": "Monitor",
+            "price": 299.99,
+            "quantity": 1,
+            "specs": {
+              "size": "27 inch",
+              "resolution": "4K",
+              "refreshRate": "144Hz"
+            }
+          }
+        ],
+        "shipping": {
+          "method": "express",
+          "address": {
+            "street": "456 Oak Ave",
+            "city": "Los Angeles",
+            "country": "USA"
+          },
+          "status": "processing"
+        }
+      }
+    ]
   }
 ]
