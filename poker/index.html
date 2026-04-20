@@ -2,7 +2,7 @@
 
 <head>
   <title>Poker Calculator</title>
-  <link rel="stylesheet" href="index.css"></linkt>
+  <link rel="stylesheet" href="index.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
 </head>
 
@@ -19,7 +19,7 @@
       </fieldset>
 
       <table>
-        <thread>
+        <thead>
           <tr>
             <th>Name</th>
             <th>Buy-ins</th>
@@ -27,24 +27,24 @@
             <th>Delta</th>
             <th>Remove</th>
           </tr>
-        </thread>
+        </thead>
         <tbody id="rowsContainer">
           <template id="rowTemplate" data-rowNumber="0">
             <tr class="playerRow" data-rowNumber="0">
               <td>
-                <input type="text" value="Player 1" id="nameField" class="nameField" onchange="saveState()">
+                <input type="text" value="Player 1" class="nameField" onchange="saveState()">
               </td>
-      
+
               <td>
-                <input type="number" value="1" id="buyInsField" onchange="recalculate()">
+                <input type="number" value="1" class="buyInsField" onchange="recalculate()">
               </td>
-      
+
               <td>
-                <input type="number" value="2000" id="chipsField" onchange="recalculate()">
+                <input type="number" value="2000" class="chipsField" onchange="recalculate()">
               </td>
-      
+
               <td>
-                <input type="text" value="0" id="deltaField" readonly class="deltaField">
+                <input type="text" value="0" readonly class="deltaField">
               </td>
       
               <td>
@@ -54,7 +54,7 @@
           </template>
         </tbody>
 
-        <tfood>
+        <tfoot>
           <tr>
             <td>Total</td>
             <td id="totalBuyInsField">0</td>
@@ -62,7 +62,7 @@
             <td id="totalDeltaField">0</td>
             <td></td>
           </tr>
-        </tfood>
+        </tfoot>
       </table>
 
       <fieldset>
@@ -82,11 +82,11 @@
 
       <template id="transferTemplate">
         <tr class="transferRow">
-          <td id="fromPlayerField"></td>
+          <td class="fromPlayerField"></td>
 
-          <td id="toPlayerField"></td>
+          <td class="toPlayerField"></td>
 
-          <td id="amountField"></td>
+          <td class="amountField"></td>
         </tr>
       </template>
 

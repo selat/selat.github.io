@@ -3,16 +3,16 @@ function addRow() {
     const template = document.getElementById("rowTemplate").content;
     const newRow = document.importNode(template, true);
 
-    const nameField = newRow.querySelector("#nameField");
+    const nameField = newRow.querySelector(".nameField");
     nameField.value = "Player " + (rowsNumber + 1);
     const rowElement = newRow.querySelector(".playerRow");
-    rowElement.dataset.rowNumber = rowsNumber;
 
     players.push({
+        row: rowElement,
         name: nameField,
-        buyIns: newRow.querySelector("#buyinsField"),
-        chips: newRow.querySelector("#chipsField"),
-        delta: newRow.querySelector("#deltaField"),
+        buyIns: newRow.querySelector(".buyInsField"),
+        chips: newRow.querySelector(".chipsField"),
+        delta: newRow.querySelector(".deltaField"),
     });
 
     rowsContainer.appendChild(newRow);
@@ -24,7 +24,8 @@ function addRow() {
 function removeRow(row) {
     var rowsContainer = document.getElementById("rowsContainer");
     rowsContainer.removeChild(row);
-    players.splice(row.dataset.rowNumber, 1);
+    const idx = players.findIndex(p => p.row === row);
+    if (idx >= 0) players.splice(idx, 1);
     rowsNumber--;
     recalculate();
 }
@@ -125,9 +126,9 @@ function solve() {
         const transferAmount = Math.min(debts[0], credits[credits.length - 1]);
 
         const newTransfer = document.importNode(template, true);
-        newTransfer.querySelector("#fromPlayerField").innerHTML = debtorNames[0];
-        newTransfer.querySelector("#toPlayerField").innerHTML = creditorNames[creditorNames.length - 1];
-        newTransfer.querySelector("#amountField").innerHTML = transferAmount.toFixed(2);
+        newTransfer.querySelector(".fromPlayerField").innerHTML = debtorNames[0];
+        newTransfer.querySelector(".toPlayerField").innerHTML = creditorNames[creditorNames.length - 1];
+        newTransfer.querySelector(".amountField").innerHTML = transferAmount.toFixed(2);
         children.push(newTransfer);
 
         debts[0] -= transferAmount;
