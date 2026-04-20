@@ -19,8 +19,8 @@
 
   const camera = { x: 0, y: 0, scale: 1 };
 
-  const SIDE_CSS_W = 260;
-  const SIDE_CSS_H = 110;
+  let sideW = 260;
+  let sideH = 110;
 
   // Body at perihelion, orbit inclined about the x-axis. Sun (central mass) assumed at origin.
   function planet(name, { a, e, iDeg, mass, color, radiusPx }) {
@@ -323,8 +323,11 @@
     canvas.style.height = window.innerHeight + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    sideCanvas.width = Math.floor(SIDE_CSS_W * dpr);
-    sideCanvas.height = Math.floor(SIDE_CSS_H * dpr);
+    const sideRect = sideCanvas.getBoundingClientRect();
+    sideW = sideRect.width;
+    sideH = sideRect.height;
+    sideCanvas.width = Math.floor(sideW * dpr);
+    sideCanvas.height = Math.floor(sideH * dpr);
     sideCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   resize();
@@ -339,8 +342,8 @@
 
   function projectSide(wh, wv) {
     return {
-      x: (wh - camera.x) * camera.scale + SIDE_CSS_W / 2,
-      y: -wv * camera.scale + SIDE_CSS_H / 2,
+      x: (wh - camera.x) * camera.scale + sideW / 2,
+      y: -wv * camera.scale + sideH / 2,
     };
   }
 
@@ -351,60 +354,145 @@
     };
   }
 
-  let dragging = null;
+  let panState = null;
   let pendingBody = null;
   let colorCycle = 0;
   const NEW_COLORS = ['#d070ff', '#ff5090', '#80ff90', '#ffef70', '#70e0ff', '#ffaa50'];
   const NEW_BODY_MASS = 1e23;
   const VELOCITY_TIME_BASE = YEAR;
 
+  const pointers = new Map();
+  let pinchState = null;
+  const lastMouse = { x: 0, y: 0 };
+
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 0 && !e.shiftKey) {
-      const w = screenToWorld(e.clientX, e.clientY);
-      pendingBody = { start: w, end: w };
-    } else {
-      dragging = { sx: e.clientX, sy: e.clientY, cx: camera.x, cy: camera.y };
-      canvas.classList.add('dragging');
+  canvas.addEventListener('pointerdown', (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+
+    if (e.pointerType === 'mouse') {
+      if (e.button === 0 && !e.shiftKey) {
+        const w = screenToWorld(e.clientX, e.clientY);
+        pendingBody = { start: w, end: w };
+      } else {
+        panState = { lastX: e.clientX, lastY: e.clientY };
+        canvas.classList.add('dragging');
+      }
+      return;
+    }
+
+    if (pointers.size === 1) {
+      panState = { lastX: e.clientX, lastY: e.clientY };
+    } else if (pointers.size === 2) {
+      panState = null;
+      const pts = [...pointers.values()];
+      pinchState = {
+        lastDist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+        lastMidX: (pts[0].x + pts[1].x) / 2,
+        lastMidY: (pts[0].y + pts[1].y) / 2,
+      };
     }
   });
-  window.addEventListener('mousemove', (e) => {
-    if (dragging) {
-      camera.x = dragging.cx - (e.clientX - dragging.sx) / camera.scale;
-      camera.y = dragging.cy + (e.clientY - dragging.sy) / camera.scale;
-    } else if (pendingBody) {
-      pendingBody.end = screenToWorld(e.clientX, e.clientY);
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (pointers.has(e.pointerId)) {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
     }
     lastMouse.x = e.clientX;
     lastMouse.y = e.clientY;
-  });
-  window.addEventListener('mouseup', () => {
-    if (dragging) {
-      dragging = null;
-      canvas.classList.remove('dragging');
+
+    if (e.pointerType === 'mouse') {
+      if (pendingBody) {
+        pendingBody.end = screenToWorld(e.clientX, e.clientY);
+      } else if (panState) {
+        const dx = e.clientX - panState.lastX;
+        const dy = e.clientY - panState.lastY;
+        camera.x -= dx / camera.scale;
+        camera.y += dy / camera.scale;
+        panState.lastX = e.clientX;
+        panState.lastY = e.clientY;
+      }
+      return;
     }
-    if (pendingBody) {
-      const { start, end } = pendingBody;
-      const color = NEW_COLORS[colorCycle++ % NEW_COLORS.length];
-      bodies.push({
-        name: 'body',
-        pos: { x: start.x, y: start.y, z: 0 },
-        vel: {
-          x: (end.x - start.x) / VELOCITY_TIME_BASE,
-          y: (end.y - start.y) / VELOCITY_TIME_BASE,
-          z: 0,
-        },
-        acc: { x: 0, y: 0, z: 0 },
-        mass: NEW_BODY_MASS,
-        color,
-        radiusPx: 3,
-        trail: [],
-      });
-      computeAccelerations();
-      pendingBody = null;
+
+    if (pointers.size === 1 && panState) {
+      const dx = e.clientX - panState.lastX;
+      const dy = e.clientY - panState.lastY;
+      camera.x -= dx / camera.scale;
+      camera.y += dy / camera.scale;
+      panState.lastX = e.clientX;
+      panState.lastY = e.clientY;
+    } else if (pointers.size === 2 && pinchState) {
+      const pts = [...pointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+
+      if (pinchState.lastDist > 0) {
+        const factor = dist / pinchState.lastDist;
+        const before = screenToWorld(midX, midY);
+        camera.scale *= factor;
+        const after = screenToWorld(midX, midY);
+        camera.x += before.x - after.x;
+        camera.y += before.y - after.y;
+      }
+
+      const dx = midX - pinchState.lastMidX;
+      const dy = midY - pinchState.lastMidY;
+      camera.x -= dx / camera.scale;
+      camera.y += dy / camera.scale;
+
+      pinchState.lastDist = dist;
+      pinchState.lastMidX = midX;
+      pinchState.lastMidY = midY;
     }
   });
+
+  function endPointer(e) {
+    const entry = pointers.get(e.pointerId);
+    pointers.delete(e.pointerId);
+
+    if (!entry || entry.type === 'mouse') {
+      if (panState) {
+        panState = null;
+        canvas.classList.remove('dragging');
+      }
+      if (pendingBody) {
+        const { start, end } = pendingBody;
+        const color = NEW_COLORS[colorCycle++ % NEW_COLORS.length];
+        bodies.push({
+          name: 'body',
+          pos: { x: start.x, y: start.y, z: 0 },
+          vel: {
+            x: (end.x - start.x) / VELOCITY_TIME_BASE,
+            y: (end.y - start.y) / VELOCITY_TIME_BASE,
+            z: 0,
+          },
+          acc: { x: 0, y: 0, z: 0 },
+          mass: NEW_BODY_MASS,
+          color,
+          radiusPx: 3,
+          trail: [],
+        });
+        computeAccelerations();
+        pendingBody = null;
+      }
+      return;
+    }
+
+    if (pointers.size === 0) {
+      panState = null;
+      pinchState = null;
+    } else if (pointers.size === 1) {
+      pinchState = null;
+      const remaining = [...pointers.values()][0];
+      panState = { lastX: remaining.x, lastY: remaining.y };
+    }
+  }
+
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -415,8 +503,6 @@
     camera.x += before.x - after.x;
     camera.y += before.y - after.y;
   }, { passive: false });
-
-  const lastMouse = { x: 0, y: 0 };
 
   function setPlaying(p) {
     sim.playing = p;
@@ -547,7 +633,7 @@
     }
 
     drawScene(ctx, window.innerWidth, window.innerHeight, projectMain, 0, 1);
-    drawScene(sideCtx, SIDE_CSS_W, SIDE_CSS_H, projectSide, 0, 2);
+    drawScene(sideCtx, sideW, sideH, projectSide, 0, 2);
     drawPending();
 
     updateHud();
