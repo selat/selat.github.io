@@ -1,17 +1,22 @@
 :root {
-    --bg: #0f1115;
-    --surface: #171a20;
-    --surface-2: #1f232b;
-    --border: #2a2f38;
-    --text: #e4e6eb;
-    --muted: #9aa1ab;
-    --felt: #2e7d5b;
-    --felt-hover: #36976d;
-    --accent: #d4a84b;
-    --pos: #4ade80;
-    --neg: #f87171;
-    --danger: #b14747;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --bg: #0c0f0d;
+    --bg-2: #0f1412;
+    --surface: #141815;
+    --border: #1f2a24;
+    --border-soft: rgba(31, 42, 36, 0.55);
+    --text: #f0e6d0;
+    --muted: #8a8275;
+    --accent: #c9a36b;
+    --accent-soft: rgba(201, 163, 107, 0.4);
+    --pos: #7fb069;
+    --pos-bg: rgba(127, 176, 105, 0.08);
+    --pos-border: rgba(127, 176, 105, 0.35);
+    --neg: #d4574a;
+    --neg-bg: rgba(212, 87, 74, 0.08);
+    --neg-border: rgba(212, 87, 74, 0.35);
+
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: ui-serif, Georgia, "Times New Roman", serif;
 }
 
 *, *::before, *::after {
@@ -21,34 +26,90 @@
 html, body {
     margin: 0;
     padding: 0;
-    background: var(--bg);
-    color: var(--text);
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
     font-size: 15px;
     line-height: 1.5;
     min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(26, 58, 46, 0.25), transparent 70%),
+        radial-gradient(ellipse 60% 30% at 50% 100%, rgba(201, 163, 107, 0.05), transparent 70%);
 }
 
 .container {
-    max-width: 600px;
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
     margin: 0 auto;
-    padding: 1.5rem 1rem 3rem;
+    padding: 2rem 1.25rem 3rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
 }
 
 h1 {
-    font-size: 1.6rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0 0 1.5rem;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+    margin: 0;
 }
 
-h1::before {
-    content: "♠ ";
+h1 em {
+    font-style: italic;
+    font-weight: 400;
     color: var(--accent);
-    opacity: 0.85;
+}
+
+.subtitle {
+    margin: 0.5rem 0 0;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.chip {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #c23a3a, #7a1f1f 70%);
+    border: 2px dashed rgba(240, 230, 208, 0.35);
+    box-shadow: inset 0 0 0 4px #8a2727, 0 2px 8px rgba(0, 0, 0, 0.4);
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.chip::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7a1f1f, #a52a2a);
+    border: 1px solid rgba(240, 230, 208, 0.15);
 }
 
 fieldset {
@@ -62,40 +123,74 @@ label {
     font-size: 0.85rem;
 }
 
-/* Top bar: buy-in settings */
+/* Config card */
 form#form > fieldset:first-of-type {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    flex-wrap: wrap;
+    padding: 1.25rem;
+    background: linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
 }
 
-form#form > fieldset:first-of-type label {
-    margin: 0;
-    white-space: nowrap;
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+    font-weight: 500;
+}
+
+.input-wrap {
+    position: relative;
+}
+
+.input-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--muted);
+    pointer-events: none;
+}
+
+input.with-prefix {
+    padding-left: 28px;
 }
 
 form#form > fieldset:first-of-type input {
-    width: 90px;
+    width: 100%;
+    height: 48px;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* Inputs */
 input[type="text"],
 input[type="number"] {
-    background: var(--surface-2);
+    background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    height: 32px;
-    padding: 0 8px;
+    border-radius: 10px;
+    height: 36px;
+    padding: 0 10px;
     font-family: inherit;
     font-size: inherit;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s;
     -moz-appearance: textfield;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
@@ -106,71 +201,63 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="text"]:focus,
 input[type="number"]:focus {
-    border-color: var(--felt);
+    border-color: var(--accent-soft);
+    background: var(--bg-2);
     outline: none;
 }
 
-input[readonly] {
+input[readonly]:not(.deltaField) {
     background: transparent;
     border-color: transparent;
     color: var(--muted);
     padding: 0;
 }
 
-/* Buttons */
+/* Base button (overridden per-role below) */
 input[type="button"],
 button {
-    background: var(--felt);
-    color: white;
-    border: 1px solid var(--felt);
-    border-radius: 4px;
-    height: 36px;
-    padding: 0 1.2rem;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    height: 40px;
+    padding: 0 1.25rem;
     font-family: inherit;
     font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: 500;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-}
-
-input[type="button"]:hover,
-input[type="button"]:focus,
-button:hover,
-button:focus {
-    background: var(--felt-hover);
-    border-color: var(--felt-hover);
-    outline: none;
+    transition: all 0.15s;
 }
 
 /* Tables */
 table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    background: linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 thead th {
-    background: var(--surface-2);
+    background: transparent;
     color: var(--muted);
     font-weight: 500;
-    font-size: 0.72rem;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.18em;
     text-align: left;
-    border-bottom: 1px solid var(--border);
-    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--border-soft);
+    padding: 0.75rem 1rem;
 }
 
 tbody td,
 tfoot td {
-    border-bottom: 1px solid var(--border);
-    padding: 0.3rem 0.9rem;
+    border-bottom: 1px solid var(--border-soft);
+    padding: 0.45rem 1rem;
     vertical-align: middle;
 }
 
@@ -181,13 +268,13 @@ tbody tr:last-child td {
 thead th:first-child,
 tbody td:first-child,
 tfoot td:first-child {
-    padding-left: 1.1rem;
+    padding-left: 1.25rem;
 }
 
 thead th:last-child,
 tbody td:last-child,
 tfoot td:last-child {
-    padding-right: 1.1rem;
+    padding-right: 1.25rem;
 }
 
 /* Right-align numeric columns (player table) */
@@ -197,37 +284,55 @@ form#form tfoot td:nth-child(n+2):nth-child(-n+4) {
     text-align: right;
 }
 
-form#form tbody td:nth-child(n+2):nth-child(-n+4) input {
+form#form tbody td:nth-child(2) input,
+form#form tbody td:nth-child(3) input {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-family: var(--mono);
 }
 
 /* Per-row input sizing */
 .nameField {
     width: 100%;
     min-width: 100px;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
 }
 
-.buyInsField {
-    width: 60px;
+.nameField::placeholder {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: rgba(138, 130, 117, 0.6);
+    opacity: 1;
 }
 
-.chipsField {
-    width: 90px;
-}
+.buyInsField { width: 60px; }
+.chipsField { width: 90px; }
 
+/* Delta pill */
 .deltaField {
-    width: 80px;
-    font-weight: 600;
+    width: 90px;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: center;
+    background: rgba(12, 15, 13, 0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    padding: 0 8px;
+    height: 32px;
 }
 
 .deltaField.positive {
     color: var(--pos);
+    background: var(--pos-bg);
+    border-color: var(--pos-border);
 }
 
 .deltaField.negative {
     color: var(--neg);
+    background: var(--neg-bg);
+    border-color: var(--neg-border);
 }
 
 /* Remove column */
@@ -237,118 +342,151 @@ form#form tfoot td:last-child {
     width: 1%;
     text-align: center;
     padding-left: 0.5rem;
-    padding-right: 0.7rem;
+    padding-right: 0.9rem;
 }
 
-/* Totals row */
+/* Totals */
 tfoot td {
-    background: var(--surface-2);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    font-family: var(--mono);
-    border-top: 2px solid var(--felt);
+    background: rgba(15, 20, 18, 0.5);
+    border-top: 1px solid var(--border-soft);
     border-bottom: none;
-    padding-top: 0.55rem;
-    padding-bottom: 0.55rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
 }
 
 tfoot td:first-child {
-    font-family: inherit;
+    font-family: var(--font-body);
     color: var(--muted);
     text-transform: uppercase;
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
+    font-size: 10px;
+    letter-spacing: 0.18em;
     font-weight: 500;
 }
 
-#totalDeltaField.positive {
-    color: var(--pos);
-}
+#totalDeltaField.positive { color: var(--pos); }
+#totalDeltaField.negative { color: var(--neg); }
 
-#totalDeltaField.negative {
-    color: var(--neg);
-}
-
-/* Compact × remove button */
+/* × remove button — circular ghost */
 .removeBtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     color: var(--muted);
-    border: 1px solid var(--border);
-    width: 26px;
-    height: 26px;
+    border: 1px solid transparent;
+    width: 32px;
+    height: 32px;
     padding: 0 0 2px;
     font-size: 1.2rem;
     line-height: 1;
     text-transform: none;
     letter-spacing: 0;
     font-weight: normal;
-    border-radius: 4px;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
 .removeBtn:hover,
 .removeBtn:focus {
-    background: var(--danger);
-    color: white;
-    border-color: var(--danger);
+    color: var(--neg);
+    background: rgba(212, 87, 74, 0.08);
+    border-color: rgba(212, 87, 74, 0.25);
+    outline: none;
 }
 
 /* Action buttons row */
 form#form > fieldset:last-of-type {
     display: flex;
     gap: 0.75rem;
+    align-items: stretch;
     margin: 0.5rem 0 1.5rem;
 }
 
+/* Add Player — dashed secondary */
 form#form > fieldset:last-of-type input[type="button"]:first-child {
+    flex: 1;
     background: transparent;
     color: var(--muted);
-    border-color: var(--border);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    height: 44px;
 }
 
 form#form > fieldset:last-of-type input[type="button"]:first-child:hover {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--border);
+    color: var(--accent);
+    border-color: var(--accent-soft);
+    background: rgba(201, 163, 107, 0.03);
 }
 
-/* Transfers table: hide entirely when empty */
+/* Solve — gold pill CTA */
+form#form > fieldset:last-of-type input[type="button"]:last-child {
+    flex: 1.4;
+    background: linear-gradient(180deg, #d4b27c, #b88d54);
+    color: #1a1410;
+    border: 1px solid rgba(240, 230, 208, 0.15);
+    border-radius: 999px;
+    height: 44px;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: 0 8px 24px rgba(201, 163, 107, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+form#form > fieldset:last-of-type input[type="button"]:last-child:hover {
+    box-shadow: 0 10px 30px rgba(201, 163, 107, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+form#form > fieldset:last-of-type input[type="button"]:last-child:active {
+    transform: scale(0.985);
+}
+
+/* Transfers table */
 .container > table:has(#transfersContainer:empty) {
     display: none;
 }
 
 #transfersContainer td {
-    padding: 0.45rem 0.9rem;
+    padding: 0.6rem 1rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
 }
 
 #transfersContainer td:first-child {
-    padding-left: 1.1rem;
+    padding-left: 1.25rem;
+    color: var(--neg);
+}
+
+#transfersContainer td:nth-child(2) {
+    color: var(--pos);
 }
 
 #transfersContainer td:last-child,
 .container > table > thead th:last-child {
+    padding-right: 1.25rem;
     text-align: right;
-    padding-right: 1.1rem;
 }
 
 .transferRow .amountField {
-    font-family: var(--mono);
     font-variant-numeric: tabular-nums;
     color: var(--accent);
-    font-weight: 600;
+    font-size: 1.1rem;
 }
 
-/* Portrait: fill viewport width, touch-friendly sizing */
-@media (orientation: portrait) {
+/* Portrait tablets/wide-portrait (aspect >= 0.7): keep table, touch-friendly */
+@media (orientation: portrait) and (min-aspect-ratio: 7/10) {
     .container {
-        max-width: 100%;
+        max-width: 85%;
         padding: 2rem 1.5rem 3rem;
     }
 
     h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
         margin-bottom: 2rem;
     }
 
@@ -360,103 +498,236 @@ form#form > fieldset:last-of-type input[type="button"]:first-child:hover {
 
     input[type="button"],
     button {
-        height: 44px;
-        font-size: 0.85rem;
-    }
-
-    form#form > fieldset:first-of-type {
-        padding: 1rem 1.25rem;
+        height: 48px;
     }
 
     form#form > fieldset:first-of-type input {
-        width: 120px;
+        height: 52px;
+        font-size: 1.4rem;
     }
 
-    .buyInsField {
-        width: 80px;
+    .buyInsField { width: 80px; }
+    .chipsField { width: 120px; }
+    .deltaField { width: 110px; height: 40px; font-size: 1.1rem; }
+
+    .removeBtn { width: 38px; height: 38px; font-size: 1.35rem; }
+
+    thead th {
+        padding: 0.9rem 1rem;
+        font-size: 11px;
     }
 
-    .chipsField {
-        width: 120px;
+    tbody td,
+    tfoot td {
+        padding: 0.55rem 1rem;
     }
 
-    .deltaField {
-        width: 110px;
+    tfoot td {
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+        font-size: 1.2rem;
+    }
+}
+
+/* Narrow portrait (aspect < 0.7): card layout */
+@media (max-aspect-ratio: 7/10) {
+    .container {
+        max-width: 90%;
+        padding: 1.5rem 0.5rem 2.5rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    form#form > fieldset:first-of-type input {
+        height: 52px;
+        font-size: 1.4rem;
+    }
+
+    /* Player table → stacked cards */
+    form#form > table {
+        display: block;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        overflow: visible;
+        margin-bottom: 1rem;
+    }
+
+    form#form > table > thead {
+        display: none;
+    }
+
+    form#form > table > tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        counter-reset: player-index;
+    }
+
+    .playerRow {
+        counter-increment: player-index;
+    }
+
+    form#form > table > tfoot {
+        display: block;
+        margin-top: 1rem;
+    }
+
+    .playerRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 0.75rem 0.5rem;
+        padding: 1rem 1.1rem;
+        background: linear-gradient(180deg, var(--surface), var(--bg-2));
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+    }
+
+    .playerRow td {
+        padding: 0;
+        border: none;
+        display: block;
+        text-align: left;
+        width: auto;
+    }
+
+    .playerRow td:nth-child(1) {
+        grid-column: 1 / 4;
+        grid-row: 1;
+        align-self: center;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .playerRow td:nth-child(1)::before {
+        content: "#" counter(player-index);
+        font-family: var(--font-display);
+        font-style: italic;
+        color: var(--accent);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .playerRow td:nth-child(5) { grid-column: 4; grid-row: 1; align-self: center; }
+    .playerRow td:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .playerRow td:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .playerRow td:nth-child(4) { grid-column: 3; grid-row: 2; }
+
+    /* Inline field labels */
+    .playerRow td:nth-child(2)::before,
+    .playerRow td:nth-child(3)::before,
+    .playerRow td:nth-child(4)::before {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+        font-weight: 500;
+    }
+
+    .playerRow td:nth-child(2)::before { content: "Buy-ins"; }
+    .playerRow td:nth-child(3)::before { content: "Chips"; }
+    .playerRow td:nth-child(4)::before { content: "Delta"; }
+
+    /* Name as a borderless display input */
+    .playerRow .nameField {
+        width: 100%;
+        max-width: none;
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid transparent;
+        border-radius: 0;
+        padding: 0 0 4px;
+        height: auto;
+    }
+
+    .playerRow .nameField:focus {
+        background: transparent;
+        border-bottom-color: var(--accent-soft);
+    }
+
+    .playerRow .buyInsField,
+    .playerRow .chipsField,
+    .playerRow .deltaField {
+        width: 100%;
+        max-width: none;
+        height: 44px;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .playerRow .deltaField {
+        font-family: var(--font-display);
+        font-size: 1.1rem;
     }
 
     .removeBtn {
         width: 36px;
         height: 36px;
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 
-    thead th {
-        padding: 0.9rem 0.9rem;
-        font-size: 0.78rem;
+    /* Totals as compact summary card */
+    tfoot tr {
+        display: grid;
+        grid-template-columns: auto 1fr 1fr 1fr;
+        gap: 0.4rem 1rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(180deg, var(--surface), var(--bg-2));
+        border: 1px solid var(--border-soft);
+        border-radius: 16px;
+        align-items: baseline;
     }
 
-    tbody td,
     tfoot td {
-        padding: 0.5rem 0.9rem;
+        border: none;
+        padding: 0;
+        background: transparent;
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        text-align: right;
     }
 
-    tfoot td {
-        padding-top: 0.85rem;
-        padding-bottom: 0.85rem;
+    tfoot td:first-child {
+        font-family: var(--font-body);
+        text-align: left;
+    }
+
+    tfoot td:last-child {
+        display: none;
+    }
+
+    /* Stack action buttons full-width */
+    form#form > fieldset:last-of-type {
+        flex-direction: column;
+    }
+
+    form#form > fieldset:last-of-type input[type="button"] {
+        flex: none;
+        width: 100%;
+        height: 50px;
+    }
+
+    form#form > fieldset:last-of-type input[type="button"]:last-child {
         font-size: 1.05rem;
     }
-}
 
-/* Phones: ultra-compact */
-@media (max-width: 600px) {
-    .container {
-        padding: 1rem 0.5rem 2rem;
+    /* Transfers: tighter cells on narrow */
+    #transfersContainer td {
+        padding: 0.55rem 0.75rem;
     }
 
-    h1 {
-        font-size: 1.35rem;
-        margin-bottom: 1rem;
+    #transfersContainer td:first-child {
+        padding-left: 1rem;
     }
 
-    thead th {
-        padding: 0.5rem 0.5rem;
-        font-size: 0.68rem;
-    }
-
-    tbody td,
-    tfoot td {
-        padding: 0.3rem 0.5rem;
-    }
-
-    thead th:first-child,
-    tbody td:first-child,
-    tfoot td:first-child {
-        padding-left: 0.7rem;
-    }
-
-    thead th:last-child,
-    tbody td:last-child,
-    tfoot td:last-child {
-        padding-right: 0.7rem;
-    }
-
-    .nameField {
-        min-width: 80px;
-    }
-
-    .buyInsField {
-        width: 48px;
-    }
-
-    .chipsField {
-        width: 72px;
-    }
-
-    .deltaField {
-        width: 64px;
-    }
-
-    input[type="button"] {
-        padding: 0 0.9rem;
+    #transfersContainer td:last-child {
+        padding-right: 1rem;
     }
 }

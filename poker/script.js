@@ -4,7 +4,7 @@ function addRow() {
     const newRow = document.importNode(template, true);
 
     const nameField = newRow.querySelector(".nameField");
-    nameField.value = "Player " + (rowsNumber + 1);
+    nameField.placeholder = "Player " + (rowsNumber + 1);
     const rowElement = newRow.querySelector(".playerRow");
 
     players.push({
@@ -120,12 +120,13 @@ function solve() {
     const creditorNames = [];
     for (var i = 0; i < playersWithDeltas.length; i++) {
         const delta = parseFloat(playersWithDeltas[i].delta.value);
+        const displayName = playersWithDeltas[i].name.value.trim() || playersWithDeltas[i].name.placeholder;
         if (delta < 0) {
             debts.push(-delta);
-            debtorNames.push(playersWithDeltas[i].name.value);
+            debtorNames.push(displayName);
         } else {
             credits.push(delta);
-            creditorNames.push(playersWithDeltas[i].name.value);
+            creditorNames.push(displayName);
         }
     }
 
