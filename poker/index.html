@@ -1,114 +1,206 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>Poker Calculator</title>
-  <link rel="stylesheet" href="index.css">
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c0f0d" />
+  <title>The Pot · Poker Settlement</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Geist:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
 <body>
-  <div class="container">
+  <main class="shell">
+    <!-- Header -->
     <header class="header">
       <div>
-        <h1>Poker <em>Winnings</em> Calculator</h1>
-        <p class="subtitle">Cash Game Settlement</p>
+        <h1 class="title">The <em>Pot</em></h1>
+        <p class="eyebrow">Cash Game Settlement</p>
       </div>
       <div class="chip" aria-hidden="true"></div>
     </header>
 
-    <form id="form">
-      <fieldset>
-        <div class="grid-2">
-          <div class="field">
-            <label for="buyInSizeField">Buy-In</label>
-            <div class="input-wrap">
-              <span class="input-prefix">$</span>
-              <input type="number" inputmode="decimal" value="20" id="buyInSizeField" class="with-prefix" onchange="recalculate()">
-            </div>
-          </div>
-          <div class="field">
-            <label for="buyInChipsField">Chip Stack</label>
-            <input type="number" inputmode="numeric" value="2000" id="buyInChipsField" onchange="recalculate()">
+    <!-- Game structure -->
+    <section class="card config">
+      <div class="row-between mb-m">
+        <span class="eyebrow">Game Structure</span>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="eyebrow mb-s" for="buyInSizeField">Buy-in</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input
+              type="number"
+              inputmode="decimal"
+              id="buyInSizeField"
+              class="input input-lg with-prefix"
+              value="20"
+              placeholder="20"
+              oninput="recalculate()"
+            />
           </div>
         </div>
-      </fieldset>
+        <div>
+          <label class="eyebrow mb-s" for="buyInChipsField">Chip Stack</label>
+          <input
+            type="number"
+            inputmode="numeric"
+            id="buyInChipsField"
+            class="input input-lg"
+            value="1000"
+            placeholder="1000"
+            oninput="recalculate()"
+          />
+        </div>
+      </div>
+    </section>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Buy-ins</th>
-            <th>Chips</th>
-            <th>Delta</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody id="rowsContainer">
-          <template id="rowTemplate" data-rowNumber="0">
-            <tr class="playerRow" data-rowNumber="0">
-              <td>
-                <input type="text" class="nameField" onchange="saveState()">
-              </td>
+    <!-- Players -->
+    <section class="players-section">
+      <div class="row-between mb-s">
+        <span class="eyebrow">Players</span>
+      </div>
+      <div id="rowsContainer" class="players"></div>
+      <button type="button" class="btn-add" onclick="addRow()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true">
+          <path d="M5 12h14" /><path d="M12 5v14" />
+        </svg>
+        <span>Add Player</span>
+      </button>
+    </section>
 
-              <td>
-                <input type="number" inputmode="numeric" value="1" class="buyInsField" onchange="recalculate()">
-              </td>
+    <!-- Totals -->
+    <section class="card totals">
+      <div class="row-between mb-m">
+        <span class="eyebrow">The Pot</span>
+      </div>
+      <div class="grid-3">
+        <div>
+          <div class="eyebrow micro mb-s">Buy-ins</div>
+          <div class="number-mid" id="totalBuyInsField">0</div>
+        </div>
+        <div>
+          <div class="eyebrow micro mb-s">Chips</div>
+          <div class="number-mid" id="totalChipsField">0</div>
+        </div>
+        <div>
+          <div class="eyebrow micro mb-s">Delta</div>
+          <div class="number-mid" id="totalDeltaField">0.00</div>
+        </div>
+      </div>
+    </section>
 
-              <td>
-                <input type="number" inputmode="numeric" value="2000" class="chipsField" onchange="recalculate()">
-              </td>
+    <!-- Solve -->
+    <section class="solve-section">
+      <button type="button" class="btn-solve" onclick="solve()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+          <path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>
+        </svg>
+        Settle the Pot
+      </button>
+      <p class="footer-note balance-warning">
+        Chips don't match buy-ins — double-check before settling.
+      </p>
+    </section>
 
-              <td>
-                <input type="text" value="0" readonly class="deltaField">
-              </td>
-      
-              <td>
-                <button class="removeBtn" type="button" title="Remove player" onclick="removeRow(this.parentNode.parentNode)">×</button>
-              </td>
-            </tr>
-          </template>
-        </tbody>
+    <!-- Settlement result (auto-hides when empty via CSS) -->
+    <section class="result">
+      <div class="result-header">
+        <span class="eyebrow accent">Settlement</span>
+      </div>
+      <ul id="transfersContainer" class="transfer-list"></ul>
+    </section>
+  </main>
 
-        <tfoot>
-          <tr>
-            <td>Total</td>
-            <td id="totalBuyInsField">0</td>
-            <td id="totalChipsField">0</td>
-            <td id="totalDeltaField">0</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
+  <!-- ═══ PLAYER ROW TEMPLATE ═══
+       Must keep the JS-required class names: .playerRow, .nameField,
+       .buyInsField, .chipsField, .deltaField. Additional style classes
+       are layered alongside them. -->
+  <template id="rowTemplate">
+    <div class="playerRow card player">
+      <div class="player-head">
+        <span class="index" aria-hidden="true"></span>
+        <input
+          type="text"
+          class="nameField name-input"
+          maxlength="24"
+          oninput="recalculate()"
+        />
+        <button
+          type="button"
+          class="btn-remove"
+          onclick="removeRow(this.closest('.playerRow'))"
+          aria-label="Remove player"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true">
+            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid-3">
+        <div>
+          <label class="eyebrow micro mb-s">Buy-ins</label>
+          <input
+            type="number"
+            inputmode="numeric"
+            min="0"
+            class="buyInsField input input-center"
+            value="1"
+            placeholder="0"
+            oninput="recalculate()"
+          />
+        </div>
+        <div>
+          <label class="eyebrow micro mb-s">Final Chips</label>
+          <input
+            type="number"
+            inputmode="numeric"
+            min="0"
+            class="chipsField input input-center"
+            value="0"
+            placeholder="0"
+            oninput="recalculate()"
+          />
+        </div>
+        <div>
+          <label class="eyebrow micro mb-s">Delta</label>
+          <input
+            type="text"
+            class="deltaField"
+            readonly
+            tabindex="-1"
+            aria-label="Delta"
+          />
+        </div>
+      </div>
+    </div>
+  </template>
 
-      <fieldset>
-        <input class="button-primary" type="button" value="Add Player" onclick="addRow()">
-        <input class="button-primary" type="button" value="Settle" onclick="solve()">
-      </fieldset>
-    </form>
+  <!-- ═══ TRANSFER ROW TEMPLATE ═══
+       Must keep: .fromPlayerField, .toPlayerField, .amountField. -->
+  <template id="transferTemplate">
+    <li class="transfer-row">
+      <span class="index" aria-hidden="true"></span>
+      <div class="transfer-names">
+        <span class="name-from fromPlayerField"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" class="arrow" aria-hidden="true">
+          <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+        </svg>
+        <span class="name-to toPlayerField"></span>
+      </div>
+      <div class="transfer-amount"><span class="amountField"></span></div>
+    </li>
+  </template>
 
-    <table>
-      <thead>
-        <tr>
-          <th>From</th>
-          <th>To</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-
-      <template id="transferTemplate">
-        <tr class="transferRow">
-          <td class="fromPlayerField"></td>
-
-          <td class="toPlayerField"></td>
-
-          <td class="amountField"></td>
-        </tr>
-      </template>
-
-      <tbody id="transfersContainer"></tbody>
-    </table>
-  </div>
-
-  <script src="script.js"></script>
+  <script src="app.js"></script>
 </body>
-
 </html>

@@ -1,0 +1,290 @@
+/* ════════════════════════════════════════════════════════════════════
+   THEME.CSS — Design system: tokens, base, reusable patterns
+   ════════════════════════════════════════════════════════════════════
+   Class names here match what app.js uses or toggles:
+     .deltaField   — readonly delta input (per-player)
+     .positive     — toggled on delta fields when value > 0
+     .negative     — toggled on delta fields when value < 0
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ── Tokens ───────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg: #0c0f0d;
+  --bg-2: #0f1412;
+  --surface: #141815;
+  --border: #1f2a24;
+  --border-soft: rgba(31, 42, 36, 0.55);
+
+  /* Ink */
+  --ink: #f0e6d0;
+  --ink-dim: #8a8275;
+
+  /* Accent */
+  --accent: #c9a36b;
+  --accent-soft: rgba(201, 163, 107, 0.4);
+
+  /* Semantic */
+  --pos: #7fb069;
+  --pos-bg: rgba(127, 176, 105, 0.06);
+  --pos-border: rgba(127, 176, 105, 0.35);
+  --neg: #d4574a;
+  --neg-bg: rgba(212, 87, 74, 0.06);
+  --neg-border: rgba(212, 87, 74, 0.35);
+
+  /* Fonts */
+  --font-display: 'Fraunces', 'Times New Roman', serif;
+  --font-body: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+
+/* ── Reset & base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: 'ss01' on, 'cv11' on;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(26, 58, 46, 0.25), transparent 70%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(201, 163, 107, 0.05), transparent 70%);
+}
+
+button { font: inherit; cursor: pointer; }
+input  { font: inherit; }
+
+
+/* ── Layout primitives ────────────────────────────────────────────── */
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+  margin: 0 auto;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 1rem);
+}
+
+.row-between { display: flex; justify-content: space-between; align-items: center; }
+.grid-2      { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.grid-3      { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+.mb-s { margin-bottom: 0.5rem; }
+.mb-m { margin-bottom: 1rem; }
+
+
+/* ── Typography ───────────────────────────────────────────────────── */
+
+/* Tiny uppercase tracked labels — used for every form field and
+   section header. */
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 500;
+}
+.eyebrow.micro  { font-size: 9px; letter-spacing: 0.15em; }
+.eyebrow.accent { color: var(--accent); letter-spacing: 0.1em; }
+
+.number-mid {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  /* Keep totals on one line even when values grow */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-note {
+  font-size: 11px;
+  text-align: center;
+  font-style: italic;
+  margin: 0.75rem 0 0;
+  opacity: 0.85;
+  color: var(--neg);
+}
+
+
+/* ── Semantic utility classes ─────────────────────────────────────── */
+/* Applied by app.js to .deltaField and #totalDeltaField via
+   classList.toggle("positive", ...) / .toggle("negative", ...). */
+.positive { color: var(--pos); }
+.negative { color: var(--neg); }
+
+
+/* ── Card ─────────────────────────────────────────────────────────── */
+.card {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 1.25rem;
+}
+
+
+/* ── Inputs ───────────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 16px;             /* 16px prevents iOS Safari zoom-on-focus */
+  padding: 10px 12px;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+  background: var(--bg-2);
+}
+.input::placeholder {
+  color: rgba(138, 130, 117, 0.5);
+  font-family: var(--font-body);
+  font-style: italic;
+}
+
+.input-lg     { font-size: 20px; }
+.input-center { text-align: center; padding: 10px 4px; }
+
+/* $ prefix pattern */
+.input-wrap   { position: relative; }
+.input-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink-dim);
+  pointer-events: none;
+}
+.with-prefix { padding-left: 24px; }
+
+/* Remove native number spinners */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+
+/* ── Delta field (readonly value display) ─────────────────────────── */
+/* app.js sets value + toggles .positive / .negative on this element.
+   It's an <input readonly> so we override the usual input focus/edit
+   affordances and treat it purely as a colored readout. */
+.deltaField {
+  width: 100%;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  text-align: center;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  background: rgba(12, 15, 13, 0.5);
+  color: var(--ink-dim);
+  min-height: 42px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;        /* can't focus/select — it's a readout */
+  outline: none;
+  caret-color: transparent;
+}
+.deltaField.positive {
+  color: var(--pos);
+  background: var(--pos-bg);
+  border-color: var(--pos-border);
+}
+.deltaField.negative {
+  color: var(--neg);
+  background: var(--neg-bg);
+  border-color: var(--neg-border);
+}
+
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+
+/* Icon-only destructive micro-action (row remove) */
+.btn-remove {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.btn-remove:hover, .btn-remove:active {
+  color: var(--neg);
+  background: rgba(212, 87, 74, 0.08);
+  border-color: rgba(212, 87, 74, 0.25);
+}
+
+/* Secondary "insert" action — dashed border */
+.btn-add {
+  width: 100%;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  color: var(--ink-dim);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.btn-add:hover, .btn-add:active {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+  background: rgba(201, 163, 107, 0.03);
+}
+.btn-add svg { transition: transform 0.3s; }
+.btn-add:hover svg { transform: rotate(90deg); }
+
+/* Primary CTA — exactly one per screen */
+.btn-solve {
+  width: 100%;
+  border-radius: 999px;
+  padding: 16px 24px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  background: linear-gradient(180deg, #d4b27c, #b88d54);
+  color: #1a1410;
+  border: 1px solid rgba(240, 230, 208, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(201, 163, 107, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+.btn-solve:hover {
+  box-shadow: 0 10px 30px rgba(201, 163, 107, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-solve:active { transform: scale(0.985); }

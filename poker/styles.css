@@ -1,0 +1,210 @@
+/* ════════════════════════════════════════════════════════════════════
+   STYLES.CSS — App-specific styles (load after theme.css)
+   ════════════════════════════════════════════════════════════════════
+   These styles compose the theme into the specific layout for this
+   app: header, player rows, settlement panel. A few CSS-only tricks
+   let us add polish without touching app.js:
+
+     • CSS counters produce the "#1 #2 #3" row indices and the
+       ordered settlement list without JS bookkeeping.
+     • :has(:empty) hides the settlement panel when there are no
+       transfers.
+     • :has(#totalDeltaField.positive/.negative) shows the balance
+       warning only when the pot doesn't zero out.
+
+   :has() requires Safari 15.4+, Chrome 105+, Firefox 121+.
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.header {
+  padding: 2rem 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+/* Decorative chip in the header — pure CSS */
+.chip {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #c23a3a, #7a1f1f 70%);
+  border: 2px dashed rgba(240, 230, 208, 0.35);
+  box-shadow: inset 0 0 0 4px #8a2727, 0 2px 8px rgba(0, 0, 0, 0.4);
+  position: relative;
+  flex-shrink: 0;
+}
+.chip::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7a1f1f, #a52a2a);
+  border: 1px solid rgba(240, 230, 208, 0.15);
+}
+
+
+/* ── Section framing ──────────────────────────────────────────────── */
+.config, .totals { margin: 0 1.25rem 1rem; }
+.players-section { padding: 0 1.25rem; margin-bottom: 1rem; }
+.solve-section   { padding: 0 1.25rem 1.5rem; }
+
+
+/* ── Player row ───────────────────────────────────────────────────── */
+.players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  /* CSS counter for row indices — updates automatically as
+     rows are added/removed. */
+  counter-reset: player;
+}
+.player      { padding: 1rem; }
+.player-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+
+.playerRow { counter-increment: player; }
+
+/* Italic serif row marker — content comes from the counter. */
+.playerRow .index {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--accent);
+  font-size: 14px;
+  width: 20px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.playerRow .index::before { content: '#' counter(player); }
+
+/* Name input sits in the row as a heading-like element — no
+   boxed border at rest, underlines on focus. */
+.name-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 18px;
+  padding: 2px 0 4px;
+  transition: border-color 0.2s;
+}
+.name-input:focus        { outline: none; border-bottom-color: var(--accent-soft); }
+.name-input::placeholder { color: rgba(138, 130, 117, 0.55); font-style: italic; }
+
+
+/* ── Totals ───────────────────────────────────────────────────────── */
+/* Totals cells use grid-3. Slightly smaller number font than elsewhere
+   so "-1234.56" fits on narrow phones. */
+.totals .number-mid { font-size: 18px; }
+
+
+/* ── Balance warning ──────────────────────────────────────────────── */
+/* Hidden by default. Shown when #totalDeltaField has a semantic class,
+   i.e. the pot doesn't zero out. */
+.balance-warning { display: none; }
+body:has(#totalDeltaField.positive) .balance-warning,
+body:has(#totalDeltaField.negative) .balance-warning {
+  display: block;
+}
+
+
+/* ── Settlement result ────────────────────────────────────────────── */
+
+/* Auto-hide when no transfers have been computed or when solve()
+   produced an empty result. */
+.result {
+  margin: 0 1.25rem 2.5rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #0f1a14 0%, #0b120e 100%);
+  border: 1px solid rgba(201, 163, 107, 0.25);
+  overflow: hidden;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+  animation: fade-in 0.4s ease-out;
+}
+.result:has(#transfersContainer:empty) { display: none; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.transfer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* CSS counter for ordered transfers */
+  counter-reset: transfer;
+}
+
+.transfer-row {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(31, 42, 36, 0.4);
+  counter-increment: transfer;
+}
+.transfer-row:first-child { border-top: none; }
+
+.transfer-row .index {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--accent);
+  font-size: 14px;
+  width: 20px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.transfer-row .index::before { content: counter(transfer); }
+
+.transfer-names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.name-from, .name-to {
+  font-family: var(--font-display);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.name-from { color: var(--neg); }
+.name-to   { color: var(--pos); }
+.transfer-names .arrow { color: var(--ink-dim); flex-shrink: 0; }
+
+.transfer-amount {
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+/* app.js writes only the number ("30.00") into .amountField.
+   Prepend "$" in CSS so we don't have to touch JS. */
+.amountField::before { content: '$'; }
