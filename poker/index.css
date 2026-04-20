@@ -1,7 +1,323 @@
+:root {
+    --bg: #0f1115;
+    --surface: #171a20;
+    --surface-2: #1f232b;
+    --border: #2a2f38;
+    --text: #e4e6eb;
+    --muted: #9aa1ab;
+    --felt: #2e7d5b;
+    --felt-hover: #36976d;
+    --accent: #d4a84b;
+    --pos: #4ade80;
+    --neg: #f87171;
+    --danger: #b14747;
+    --danger-hover: #c45656;
+}
+
+html, body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.container {
+    max-width: 720px;
+    padding: 1.5rem 1rem 3rem;
+}
+
+h1 {
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.5rem;
+}
+
+h1::before {
+    content: "♠ ";
+    color: var(--accent);
+    opacity: 0.8;
+}
+
+form#form fieldset {
+    border: none;
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+/* Compact top bar for buy-in settings */
+form#form > fieldset:first-of-type {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+form#form > fieldset:first-of-type label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+form#form > fieldset:first-of-type input[type="number"] {
+    margin: 0;
+    width: 90px;
+}
+
+label {
+    color: var(--muted);
+}
+
+input[type="text"],
+input[type="number"] {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    height: 36px;
+    padding: 0 8px;
+    transition: border-color 0.15s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    border-color: var(--felt);
+    outline: none;
+}
+
+input[readonly] {
+    background: transparent;
+    border-color: transparent;
+    color: var(--muted);
+}
+
+/* Table */
+table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+thead th {
+    background: var(--surface-2);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 0.6rem;
+}
+
+tbody td,
+tfoot td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    vertical-align: middle;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Right-align numeric columns (player table only) */
+form#form thead th:nth-child(2),
+form#form thead th:nth-child(3),
+form#form thead th:nth-child(4),
+form#form tbody td:nth-child(2),
+form#form tbody td:nth-child(3),
+form#form tbody td:nth-child(4),
+form#form tfoot td:nth-child(2),
+form#form tfoot td:nth-child(3),
+form#form tfoot td:nth-child(4) {
+    text-align: right;
+}
+
+form#form tbody td:nth-child(2) input,
+form#form tbody td:nth-child(3) input,
+form#form tbody td:nth-child(4) input {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Transfers table — right-align amount column */
+#transfersContainer td:last-child,
+.container > table thead th:last-child {
+    text-align: right;
+}
+
+/* Compact per-row inputs (no extra row margin) */
+tbody input {
+    margin-bottom: 0;
+}
+
 .nameField {
-    min-width: 80px;
+    min-width: 100px;
+}
+
+.buyInsField {
+    max-width: 70px;
+}
+
+.chipsField {
+    max-width: 100px;
 }
 
 .deltaField {
-    min-width: 50px;
+    min-width: 70px;
+    max-width: 90px;
+    font-weight: 600;
+}
+
+.deltaField.positive {
+    color: var(--pos);
+}
+
+.deltaField.negative {
+    color: var(--neg);
+}
+
+/* Totals row emphasis */
+tfoot td {
+    background: var(--surface-2);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    border-top: 2px solid var(--felt);
+}
+
+tfoot td:first-child {
+    font-family: inherit;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+}
+
+#totalDeltaField.positive {
+    color: var(--pos);
+}
+
+#totalDeltaField.negative {
+    color: var(--neg);
+}
+
+/* Compact × remove button */
+.removeBtn {
+    background: transparent !important;
+    color: var(--muted) !important;
+    border: 1px solid var(--border) !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-size: 1.1rem !important;
+    border-radius: 4px;
+    min-width: 0 !important;
+    letter-spacing: 0;
+}
+
+.removeBtn:hover,
+.removeBtn:focus {
+    background: var(--danger) !important;
+    color: white !important;
+    border-color: var(--danger) !important;
+}
+
+tbody td:last-child,
+thead th:last-child {
+    width: 1%;
+    text-align: center;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
+/* Action buttons */
+.button-primary,
+button {
+    background: var(--felt);
+    border-color: var(--felt);
+    color: white;
+    letter-spacing: 0.02em;
+}
+
+.button-primary:hover,
+.button-primary:focus,
+button:hover,
+button:focus {
+    background: var(--felt-hover);
+    border-color: var(--felt-hover);
+    color: white;
+}
+
+/* De-emphasize Add Player (first button), keep Solve primary */
+form#form > fieldset:last-of-type {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+form#form > fieldset:last-of-type input[type="button"] {
+    margin: 0;
+}
+
+form#form > fieldset:last-of-type input[type="button"]:first-child {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+}
+
+form#form > fieldset:last-of-type input[type="button"]:first-child:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+/* Transfers table — only show when populated */
+#transfersContainer:empty {
+    display: none;
+}
+
+.transferRow .amountField {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem 0.5rem 2rem;
+    }
+
+    thead th,
+    tbody td,
+    tfoot td {
+        padding: 0.4rem 0.3rem;
+        font-size: 0.9rem;
+    }
+
+    .nameField {
+        min-width: 80px;
+    }
+
+    .buyInsField {
+        max-width: 56px;
+    }
+
+    .chipsField {
+        max-width: 80px;
+    }
 }

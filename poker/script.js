@@ -47,11 +47,15 @@ function recalculate() {
         var delta = (chips / buyInChips - playerBuyIns) * buyInSize;
         totalDelta += delta;
         players[i].delta.value = delta.toFixed(2);
+        players[i].delta.classList.toggle("positive", delta > 0.005);
+        players[i].delta.classList.toggle("negative", delta < -0.005);
     }
 
     totalBuyInsField.innerHTML = totalBuyIns;
     totalChipsField.innerHTML = totalChips;
     totalDeltaField.innerHTML = totalDelta.toFixed(2);
+    totalDeltaField.classList.toggle("positive", totalDelta > 0.005);
+    totalDeltaField.classList.toggle("negative", totalDelta < -0.005);
 
     saveState();
 }
