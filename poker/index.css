@@ -11,43 +11,58 @@
     --pos: #4ade80;
     --neg: #f87171;
     --danger: #b14747;
-    --danger-hover: #c45656;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
 html, body {
+    margin: 0;
+    padding: 0;
     background: var(--bg);
     color: var(--text);
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 720px;
+    max-width: 600px;
+    margin: 0 auto;
     padding: 1.5rem 1rem 3rem;
 }
 
 h1 {
-    color: var(--text);
+    font-size: 1.6rem;
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin-bottom: 1.5rem;
+    margin: 0 0 1.5rem;
 }
 
 h1::before {
     content: "♠ ";
     color: var(--accent);
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
-form#form fieldset {
+fieldset {
     border: none;
     padding: 0;
-    margin-bottom: 1.5rem;
+    margin: 0 0 1rem;
 }
 
-/* Compact top bar for buy-in settings */
+label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* Top bar: buy-in settings */
 form#form > fieldset:first-of-type {
     display: flex;
     align-items: center;
@@ -61,29 +76,32 @@ form#form > fieldset:first-of-type {
 
 form#form > fieldset:first-of-type label {
     margin: 0;
-    color: var(--muted);
-    font-size: 0.85rem;
     white-space: nowrap;
 }
 
-form#form > fieldset:first-of-type input[type="number"] {
-    margin: 0;
+form#form > fieldset:first-of-type input {
     width: 90px;
 }
 
-label {
-    color: var(--muted);
-}
-
+/* Inputs */
 input[type="text"],
 input[type="number"] {
     background: var(--surface-2);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 4px;
-    height: 36px;
+    height: 32px;
     padding: 0 8px;
+    font-family: inherit;
+    font-size: inherit;
     transition: border-color 0.15s;
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 input[type="text"]:focus,
@@ -96,10 +114,40 @@ input[readonly] {
     background: transparent;
     border-color: transparent;
     color: var(--muted);
+    padding: 0;
 }
 
-/* Table */
+/* Buttons */
+input[type="button"],
+button {
+    background: var(--felt);
+    color: white;
+    border: 1px solid var(--felt);
+    border-radius: 4px;
+    height: 36px;
+    padding: 0 1.2rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+input[type="button"]:hover,
+input[type="button"]:focus,
+button:hover,
+button:focus {
+    background: var(--felt-hover);
+    border-color: var(--felt-hover);
+    outline: none;
+}
+
+/* Tables */
 table {
+    width: 100%;
+    border-collapse: collapse;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -111,17 +159,18 @@ thead th {
     background: var(--surface-2);
     color: var(--muted);
     font-weight: 500;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    text-align: left;
     border-bottom: 1px solid var(--border);
-    padding: 0.75rem 0.6rem;
+    padding: 0.6rem 0.9rem;
 }
 
 tbody td,
 tfoot td {
     border-bottom: 1px solid var(--border);
-    padding: 0.4rem 0.6rem;
+    padding: 0.3rem 0.9rem;
     vertical-align: middle;
 }
 
@@ -129,53 +178,47 @@ tbody tr:last-child td {
     border-bottom: none;
 }
 
-/* Right-align numeric columns (player table only) */
-form#form thead th:nth-child(2),
-form#form thead th:nth-child(3),
-form#form thead th:nth-child(4),
-form#form tbody td:nth-child(2),
-form#form tbody td:nth-child(3),
-form#form tbody td:nth-child(4),
-form#form tfoot td:nth-child(2),
-form#form tfoot td:nth-child(3),
-form#form tfoot td:nth-child(4) {
+thead th:first-child,
+tbody td:first-child,
+tfoot td:first-child {
+    padding-left: 1.1rem;
+}
+
+thead th:last-child,
+tbody td:last-child,
+tfoot td:last-child {
+    padding-right: 1.1rem;
+}
+
+/* Right-align numeric columns (player table) */
+form#form thead th:nth-child(n+2):nth-child(-n+4),
+form#form tbody td:nth-child(n+2):nth-child(-n+4),
+form#form tfoot td:nth-child(n+2):nth-child(-n+4) {
     text-align: right;
 }
 
-form#form tbody td:nth-child(2) input,
-form#form tbody td:nth-child(3) input,
-form#form tbody td:nth-child(4) input {
+form#form tbody td:nth-child(n+2):nth-child(-n+4) input {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--mono);
 }
 
-/* Transfers table — right-align amount column */
-#transfersContainer td:last-child,
-.container > table thead th:last-child {
-    text-align: right;
-}
-
-/* Compact per-row inputs (no extra row margin) */
-tbody input {
-    margin-bottom: 0;
-}
-
+/* Per-row input sizing */
 .nameField {
+    width: 100%;
     min-width: 100px;
 }
 
 .buyInsField {
-    max-width: 70px;
+    width: 60px;
 }
 
 .chipsField {
-    max-width: 100px;
+    width: 90px;
 }
 
 .deltaField {
-    min-width: 70px;
-    max-width: 90px;
+    width: 80px;
     font-weight: 600;
 }
 
@@ -187,21 +230,35 @@ tbody input {
     color: var(--neg);
 }
 
-/* Totals row emphasis */
+/* Remove column */
+form#form thead th:last-child,
+form#form tbody td:last-child,
+form#form tfoot td:last-child {
+    width: 1%;
+    text-align: center;
+    padding-left: 0.5rem;
+    padding-right: 0.7rem;
+}
+
+/* Totals row */
 tfoot td {
     background: var(--surface-2);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--mono);
     border-top: 2px solid var(--felt);
+    border-bottom: none;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
 }
 
 tfoot td:first-child {
     font-family: inherit;
     color: var(--muted);
     text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    font-weight: 500;
 }
 
 #totalDeltaField.positive {
@@ -214,62 +271,35 @@ tfoot td:first-child {
 
 /* Compact × remove button */
 .removeBtn {
-    background: transparent !important;
-    color: var(--muted) !important;
-    border: 1px solid var(--border) !important;
-    width: 28px !important;
-    height: 28px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    line-height: 1 !important;
-    font-size: 1.1rem !important;
-    border-radius: 4px;
-    min-width: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    width: 26px;
+    height: 26px;
+    padding: 0 0 2px;
+    font-size: 1.2rem;
+    line-height: 1;
+    text-transform: none;
     letter-spacing: 0;
+    font-weight: normal;
+    border-radius: 4px;
 }
 
 .removeBtn:hover,
 .removeBtn:focus {
-    background: var(--danger) !important;
-    color: white !important;
-    border-color: var(--danger) !important;
-}
-
-tbody td:last-child,
-thead th:last-child {
-    width: 1%;
-    text-align: center;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
-}
-
-/* Action buttons */
-.button-primary,
-button {
-    background: var(--felt);
-    border-color: var(--felt);
+    background: var(--danger);
     color: white;
-    letter-spacing: 0.02em;
+    border-color: var(--danger);
 }
 
-.button-primary:hover,
-.button-primary:focus,
-button:hover,
-button:focus {
-    background: var(--felt-hover);
-    border-color: var(--felt-hover);
-    color: white;
-}
-
-/* De-emphasize Add Player (first button), keep Solve primary */
+/* Action buttons row */
 form#form > fieldset:last-of-type {
     display: flex;
     gap: 0.75rem;
-    margin-top: 0.5rem;
-}
-
-form#form > fieldset:last-of-type input[type="button"] {
-    margin: 0;
+    margin: 0.5rem 0 1.5rem;
 }
 
 form#form > fieldset:last-of-type input[type="button"]:first-child {
@@ -284,29 +314,130 @@ form#form > fieldset:last-of-type input[type="button"]:first-child:hover {
     border-color: var(--border);
 }
 
-/* Transfers table — only show when populated */
-#transfersContainer:empty {
+/* Transfers table: hide entirely when empty */
+.container > table:has(#transfersContainer:empty) {
     display: none;
 }
 
+#transfersContainer td {
+    padding: 0.45rem 0.9rem;
+}
+
+#transfersContainer td:first-child {
+    padding-left: 1.1rem;
+}
+
+#transfersContainer td:last-child,
+.container > table > thead th:last-child {
+    text-align: right;
+    padding-right: 1.1rem;
+}
+
 .transferRow .amountField {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--mono);
     font-variant-numeric: tabular-nums;
     color: var(--accent);
     font-weight: 600;
 }
 
-/* Mobile */
+/* Portrait: fill viewport width, touch-friendly sizing */
+@media (orientation: portrait) {
+    .container {
+        max-width: 100%;
+        padding: 2rem 1.5rem 3rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+        height: 42px;
+        font-size: 1rem;
+    }
+
+    input[type="button"],
+    button {
+        height: 44px;
+        font-size: 0.85rem;
+    }
+
+    form#form > fieldset:first-of-type {
+        padding: 1rem 1.25rem;
+    }
+
+    form#form > fieldset:first-of-type input {
+        width: 120px;
+    }
+
+    .buyInsField {
+        width: 80px;
+    }
+
+    .chipsField {
+        width: 120px;
+    }
+
+    .deltaField {
+        width: 110px;
+    }
+
+    .removeBtn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.4rem;
+    }
+
+    thead th {
+        padding: 0.9rem 0.9rem;
+        font-size: 0.78rem;
+    }
+
+    tbody td,
+    tfoot td {
+        padding: 0.5rem 0.9rem;
+    }
+
+    tfoot td {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        font-size: 1.05rem;
+    }
+}
+
+/* Phones: ultra-compact */
 @media (max-width: 600px) {
     .container {
         padding: 1rem 0.5rem 2rem;
     }
 
-    thead th,
+    h1 {
+        font-size: 1.35rem;
+        margin-bottom: 1rem;
+    }
+
+    thead th {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.68rem;
+    }
+
     tbody td,
     tfoot td {
-        padding: 0.4rem 0.3rem;
-        font-size: 0.9rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    thead th:first-child,
+    tbody td:first-child,
+    tfoot td:first-child {
+        padding-left: 0.7rem;
+    }
+
+    thead th:last-child,
+    tbody td:last-child,
+    tfoot td:last-child {
+        padding-right: 0.7rem;
     }
 
     .nameField {
@@ -314,10 +445,18 @@ form#form > fieldset:last-of-type input[type="button"]:first-child:hover {
     }
 
     .buyInsField {
-        max-width: 56px;
+        width: 48px;
     }
 
     .chipsField {
-        max-width: 80px;
+        width: 72px;
+    }
+
+    .deltaField {
+        width: 64px;
+    }
+
+    input[type="button"] {
+        padding: 0 0.9rem;
     }
 }

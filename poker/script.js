@@ -30,6 +30,12 @@ function removeRow(row) {
     recalculate();
 }
 
+function formatSignedDelta(delta) {
+    if (Math.abs(delta) < 0.005) return "0.00";
+    const formatted = delta.toFixed(2);
+    return delta > 0 ? "+" + formatted : formatted;
+}
+
 function recalculate() {
     const buyInSize = parseFloat(buyInSizeField.value);
     const buyInChips = parseInt(buyInChipsField.value);
@@ -46,14 +52,14 @@ function recalculate() {
 
         var delta = (chips / buyInChips - playerBuyIns) * buyInSize;
         totalDelta += delta;
-        players[i].delta.value = delta.toFixed(2);
+        players[i].delta.value = formatSignedDelta(delta);
         players[i].delta.classList.toggle("positive", delta > 0.005);
         players[i].delta.classList.toggle("negative", delta < -0.005);
     }
 
     totalBuyInsField.innerHTML = totalBuyIns;
     totalChipsField.innerHTML = totalChips;
-    totalDeltaField.innerHTML = totalDelta.toFixed(2);
+    totalDeltaField.innerHTML = formatSignedDelta(totalDelta);
     totalDeltaField.classList.toggle("positive", totalDelta > 0.005);
     totalDeltaField.classList.toggle("negative", totalDelta < -0.005);
 
