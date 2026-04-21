@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="styles.css">
+  <title>Fractals</title>
+</head>
+<body>
+  <canvas id="main"></canvas>
+  <div id="hud">
+    <div id="coords"></div>
+    <div id="zoomInfo"></div>
+    <div id="iterInfo"></div>
+  </div>
+  <div id="controls">
+    <select id="fractal" title="Fractal"></select>
+    <select id="preset" title="Preset"></select>
+    <select id="palette" title="Palette">
+      <option value="fire">Fire</option>
+      <option value="ice">Ice</option>
+      <option value="rainbow" selected>Rainbow</option>
+      <option value="electric">Electric</option>
+      <option value="grayscale">Grayscale</option>
+    </select>
+    <label class="iter">
+      <span>iter</span>
+      <input type="range" id="iter" min="50" max="2000" step="10" value="256">
+      <span id="iterLabel"></span>
+    </label>
+    <div id="paramSliders"></div>
+    <button id="reset" title="Reset view">↻</button>
+  </div>
+  <div id="hint">drag · wheel to zoom · shift-click Mandelbrot → Julia</div>
+  <script src="fractals.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

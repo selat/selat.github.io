@@ -1,0 +1,177 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  color: #ccc;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  height: 100%;
+}
+
+#main {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: grab;
+  touch-action: none;
+}
+
+#main.dragging {
+  cursor: grabbing;
+}
+
+#hud {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  font-size: 12px;
+  opacity: 0.75;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.45;
+}
+
+#hud > div {
+  padding: 1px 0;
+}
+
+#hint {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+#controls {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: rgba(20, 20, 24, 0.85);
+  border: 1px solid #333;
+  border-radius: 8px;
+  font-size: 13px;
+  user-select: none;
+  max-width: calc(100vw - 16px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#controls button {
+  background: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  width: 32px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+#controls button:hover {
+  background: #2a2a30;
+}
+
+#controls select {
+  background: #1a1a1e;
+  border: 1px solid #444;
+  color: #ccc;
+  height: 28px;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#controls label > span:first-child {
+  opacity: 0.6;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#controls input[type="range"] {
+  width: 110px;
+}
+
+#iterLabel {
+  min-width: 32px;
+  opacity: 0.8;
+  text-align: right;
+}
+
+#paramSliders {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#paramSliders:empty {
+  display: none;
+}
+
+#paramSliders label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#paramSliders input[type="range"] {
+  width: 80px;
+}
+
+#paramSliders .paramVal {
+  min-width: 44px;
+  font-size: 11px;
+  opacity: 0.75;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  #controls {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    bottom: 10px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  #controls button {
+    width: 40px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  #controls select {
+    height: 36px;
+    font-size: 13px;
+  }
+
+  #controls input[type="range"] {
+    width: 90px;
+  }
+
+  #hud {
+    font-size: 11px;
+  }
+
+  #hint {
+    display: none;
+  }
+}
