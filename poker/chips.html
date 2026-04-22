@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c0f0d" />
+  <title>The Pot · Count Chips</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Geist:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main class="shell">
+    <!-- Header -->
+    <header class="header">
+      <div>
+        <h1 class="title">Count <em>Chips</em></h1>
+        <p class="eyebrow">Photo Counter</p>
+      </div>
+      <a href="index.html" class="pill-link" aria-label="Back to settlement">
+        <!-- Chevron-left icon: a single "<" stroke. -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        <span>The Pot</span>
+      </a>
+    </header>
+
+    <!-- Upload / preview -->
+    <section class="card upload-card" id="uploadCard">
+      <label for="photoInput" class="dropzone" id="dropzone">
+        <!-- Image/photo-placeholder icon: rounded frame + small "sun" circle
+             in one corner + mountain ridge (image-thumbnail metaphor). -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+          stroke-linejoin="round" width="40" height="40" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="9" cy="9" r="2" />
+          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
+        <div class="dropzone-title">Upload a photo of your chips</div>
+        <div class="dropzone-hint">Top-down, flat-laid, good lighting works best</div>
+      </label>
+      <input type="file" id="photoInput" accept="image/*" hidden />
+
+      <div class="preview-wrap" id="previewWrap" hidden>
+        <canvas id="previewCanvas" class="preview-canvas"></canvas>
+        <div class="preview-status" id="previewStatus"></div>
+      </div>
+
+      <div class="upload-actions" id="uploadActions" hidden>
+        <button type="button" class="btn-secondary" id="redetectBtn">
+          <!-- Refresh/rotate icon: two arcs forming a broken circle with
+               small arrowheads (top-right "tick" + bottom-left "tick") that
+               suggest the direction of rotation. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M3 21v-5h5" />
+          </svg>
+          <span>Re-detect</span>
+        </button>
+        <button type="button" class="btn-secondary" id="changePhotoBtn">
+          <!-- Camera icon: rounded body with a bump on top for the viewfinder,
+               and a circle in the center for the lens. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
+          <span>New Photo</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Groups -->
+    <section class="groups-section" id="groupsSection" hidden>
+      <div class="row-between mb-s">
+        <span class="eyebrow">Chip Types</span>
+        <span class="eyebrow micro" id="groupsCount"></span>
+      </div>
+      <div id="groupsContainer" class="groups"></div>
+    </section>
+
+    <!-- Total -->
+    <section class="card totals" id="totalsCard" hidden>
+      <div class="row-between mb-m">
+        <span class="eyebrow">Stack Value</span>
+      </div>
+      <div class="grid-3">
+        <div>
+          <div class="eyebrow micro mb-s">Types</div>
+          <div class="number-mid" id="totalTypesField">0</div>
+        </div>
+        <div>
+          <div class="eyebrow micro mb-s">Chips</div>
+          <div class="number-mid" id="totalChipsField">0</div>
+        </div>
+        <div>
+          <div class="eyebrow micro mb-s">Value</div>
+          <div class="number-mid accent" id="totalValueField">$0.00</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ GROUP ROW TEMPLATE ═══
+       Must keep: .swatch, .countField, .denomField, .subtotalField. -->
+  <template id="groupTemplate">
+    <div class="group card">
+      <div class="group-head">
+        <span class="swatch" aria-hidden="true"></span>
+        <div class="group-label">
+          <span class="group-name"></span>
+          <span class="group-hint eyebrow micro"></span>
+        </div>
+        <button type="button" class="btn-remove" aria-label="Remove chip type">
+          <!-- X / close icon: two crossing diagonal strokes. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" width="15" height="15" aria-hidden="true">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid-3">
+        <div>
+          <label class="eyebrow micro mb-s">Count</label>
+          <input type="number" inputmode="numeric" min="0" class="countField input input-center" value="0" />
+        </div>
+        <div>
+          <label class="eyebrow micro mb-s">Denom</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" inputmode="decimal" min="0" step="0.01"
+              class="denomField input input-center with-prefix" value="0" />
+          </div>
+        </div>
+        <div>
+          <label class="eyebrow micro mb-s">Subtotal</label>
+          <input type="text" class="subtotalField deltaField" readonly tabindex="-1" aria-label="Subtotal" />
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Load chips.js first so window.onOpenCvReady is defined before the
+       async opencv.js may fire its onload handler. -->
+  <script src="chips.js"></script>
+  <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
+</body>
+
+</html>

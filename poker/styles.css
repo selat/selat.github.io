@@ -208,3 +208,180 @@ body:has(#totalDeltaField.negative) .balance-warning {
 /* app.js writes only the number ("30.00") into .amountField.
    Prepend "$" in CSS so we don't have to touch JS. */
 .amountField::before { content: '$'; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   CHIP COUNTER — chips.html specific styles
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Small pill-shaped header link — used both to cross-navigate between
+   tools (poker index → chip counter) and to return (chip counter → poker). */
+.pill-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-dim);
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(20, 24, 21, 0.5);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.pill-link:hover {
+  color: var(--accent);
+  border-color: var(--accent-soft);
+}
+
+
+/* ── Upload card ──────────────────────────────────────────────────── */
+.upload-card { margin: 0 1.25rem 1rem; padding: 1rem; }
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+  background: rgba(201, 163, 107, 0.03);
+}
+.dropzone-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--ink);
+}
+.dropzone-hint {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-dim);
+}
+
+
+/* ── Preview ──────────────────────────────────────────────────────── */
+.preview-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+}
+.preview-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+}
+.preview-status {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: rgba(12, 15, 13, 0.85);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.upload-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+
+/* ── Secondary button ─────────────────────────────────────────────── */
+.btn-secondary {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-dim);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.btn-secondary:hover {
+  color: var(--accent);
+  border-color: var(--accent-soft);
+  background: rgba(201, 163, 107, 0.04);
+}
+
+
+/* ── Groups list ──────────────────────────────────────────────────── */
+.groups-section { padding: 0 1.25rem; margin-bottom: 1rem; }
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.group { padding: 1rem; }
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(240, 230, 208, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.group-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.group-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--ink);
+}
+
+/* Tone the subtotal field: same look as .deltaField, but always-on
+   neutral coloring and a slightly brighter positive case. */
+.subtotalField {
+  color: var(--ink);
+}
+.subtotalField.positive {
+  color: var(--accent);
+  background: rgba(201, 163, 107, 0.06);
+  border-color: var(--accent-soft);
+}
+
+
+/* ── Totals accent ────────────────────────────────────────────────── */
+.number-mid.accent { color: var(--accent); }
+
