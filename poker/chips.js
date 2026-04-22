@@ -1,81 +1,70 @@
 /* ════════════════════════════════════════════════════════════════════
-   CHIPS.JS — Photo-based poker chip counter
+   CHIPS.JS — Photo-based poker chip counter (YOLO-seg ONNX model)
    ════════════════════════════════════════════════════════════════════
    Pipeline on a user-uploaded photo:
-     1. Fit image into a 1200px work canvas
-     2. HoughCircles → candidate chip circles
-     3. Median color sampled in an annulus (avoids face pattern/text)
-     4. Convert samples to Lab, agglomerative-cluster by ΔE
-     5. Match each cluster to a canonical chip color → default denom
-     6. Draw colored outlines on overlay canvas, render group rows
+     1. Fit image into a work canvas (max dim WORK_MAX_DIM)
+     2. Letterbox into 640×640 and run the YOLO-seg ONNX model
+     3. Decode detections, NMS, reconstruct per-chip segmentation masks
+     4. Sample median color of each chip under its mask
+     5. Agglomerative-cluster samples in Lab space, match each cluster
+        to a canonical chip color → default denomination
+     6. Tint detected pixels on the overlay canvas, render group rows
 
-   Assumes flat-laid, top-down photos. Stacks are not handled in v1.
+   The model outputs the standard Ultralytics YOLO-seg tensor shapes:
+     output0: [1, 4+nc+32, N]     — box + class scores + mask coeffs
+     output1: [1, 32, mh, mw]     — mask prototypes
    ════════════════════════════════════════════════════════════════════ */
+
+
+/* ── Model config ─────────────────────────────────────────────────── */
+const MODEL_URL = 'model.onnx';
+const INPUT_SIZE = 640;
+const SCORE_THRESHOLD = 0.25;
+const IOU_THRESHOLD = 0.45;
+const MASK_THRESHOLD = 0.5;
+const NUM_CLASSES = 1;
+const NUM_MASK_COEFFS = 32;
 
 
 /* ── Canonical chip colors (typical US cash game) ─────────────────── */
 const CANONICAL_CHIPS = [
-  { name: 'White', rgb: [240, 240, 240], denom: 1 },
-  { name: 'Red', rgb: [200, 40, 40], denom: 5 },
+  { name: 'Red', rgb: [130, 40, 40], denom: 5 },
   { name: 'Blue', rgb: [40, 80, 180], denom: 10 },
   { name: 'Green', rgb: [40, 140, 60], denom: 25 },
   { name: 'Black', rgb: [30, 30, 30], denom: 100 },
   { name: 'Purple', rgb: [110, 50, 150], denom: 500 },
-  { name: 'Yellow', rgb: [230, 200, 40], denom: 1000 },
-  { name: 'Orange', rgb: [230, 120, 40], denom: 20 },
-  { name: 'Pink', rgb: [230, 130, 170], denom: 2 },
-  { name: 'Gray', rgb: [120, 120, 120], denom: 50 },
 ];
 
-/* Precompute Lab for canonical colors. */
+/* Precompute Lab for canonical colors — used by nearestCanonical(). */
 CANONICAL_CHIPS.forEach(c => { c.lab = rgbToLab(c.rgb[0], c.rgb[1], c.rgb[2]); });
 
 
 /* ── Detection params ─────────────────────────────────────────────── */
 const WORK_MAX_DIM = 1200;
 const CLUSTER_DE_THRESHOLD = 22;   // ΔE76 below which two clusters merge
-const HOUGH = {
-  dp: 1,
-  minDistFrac: 0.08,              // of work image max dim
-  param1: 200,                     // Canny upper
-  param2: 28,                      // accumulator threshold (lower = more)
-  minRadiusFrac: 0.03,
-  maxRadiusFrac: 0.12,
-};
 
 
 /* ── State ────────────────────────────────────────────────────────── */
 const state = {
-  openCvReady: false,
-  pendingImage: null,              // queued while OpenCV still initializes
-  imageBitmap: null,                // drawn-to-canvas source
+  session: null,
+  loadingSession: null,             // in-flight load promise
+  imageBitmap: null,                // source image
   workW: 0,
   workH: 0,
-  detections: [],                  // [{ x, y, r, rgb, lab }]
-  groups: [],                      // see makeGroup()
+  detections: [],                  // [{ x, y, r, rgb, lab, mask }]
+  groups: [],
   nextGroupId: 1,
 };
 
 
-/* ── OpenCV readiness ─────────────────────────────────────────────── */
-/* The <script onload> in chips.html calls this once opencv.js has loaded;
-   WASM init lands shortly after via onRuntimeInitialized. */
-window.onOpenCvReady = function () {
-  if (typeof cv === 'undefined') return;
-  if (cv.getBuildInformation) {
-    handleOpenCvReady();
-  } else {
-    cv.onRuntimeInitialized = handleOpenCvReady;
-  }
-};
-
-function handleOpenCvReady() {
-  state.openCvReady = true;
-  if (state.pendingImage) {
-    const img = state.pendingImage;
-    state.pendingImage = null;
-    runDetection(img);
-  }
+/* ── Model load ───────────────────────────────────────────────────── */
+function loadSession() {
+  if (state.session) return Promise.resolve(state.session);
+  if (state.loadingSession) return state.loadingSession;
+  state.loadingSession = ort.InferenceSession.create(MODEL_URL, {
+    executionProviders: ['webgpu', 'wasm'],
+  }).then((s) => { state.session = s; return s; });
+  return state.loadingSession;
 }
 
 
@@ -111,9 +100,7 @@ function handleFile(file) {
       state.imageBitmap = img;
       drawImageToCanvas(img);
       showPreview();
-      setStatus(state.openCvReady ? 'Detecting chips…' : 'Loading detector…');
-      if (state.openCvReady) runDetection(img);
-      else state.pendingImage = img;
+      runDetection();
     };
     img.src = e.target.result;
   };
@@ -134,85 +121,220 @@ function drawImageToCanvas(img) {
 
 
 /* ── Detection ────────────────────────────────────────────────────── */
-function runDetection(img) {
-  if (!state.openCvReady) { state.pendingImage = img; return; }
-  setStatus('Detecting chips…');
-  // Defer so the status text actually paints before we block on CV work.
-  setTimeout(() => {
-    try {
-      const detections = detectCircles();
-      state.detections = detections;
-      if (detections.length === 0) {
-        state.groups = [];
-        renderGroups();
-        renderOverlay();
-        setStatus('No chips detected — try another photo');
-        showResults();
-        return;
-      }
-      state.groups = clusterIntoGroups(detections);
+async function runDetection() {
+  try {
+    if (!state.session) setStatus('Loading model…');
+    const session = await loadSession();
+    setStatus('Detecting chips…');
+    // Yield so the status text actually paints before we block on inference.
+    await new Promise(r => setTimeout(r, 20));
+
+    const detections = await detectChips(session);
+    state.detections = detections;
+
+    if (detections.length === 0) {
+      state.groups = [];
       renderGroups();
       renderOverlay();
-      setStatus('');
+      setStatus('No chips detected — try another photo');
       showResults();
-    } catch (err) {
-      console.error(err);
-      setStatus('Detection failed: ' + err.message);
+      return;
     }
-  }, 20);
-}
 
-function detectCircles() {
-  const canvas = document.getElementById('previewCanvas');
-  const src = cv.imread(canvas);
-  const gray = new cv.Mat();
-  const circles = new cv.Mat();
-  try {
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.medianBlur(gray, gray, 5);
-
-    const dim = Math.max(state.workW, state.workH);
-    cv.HoughCircles(
-      gray, circles, cv.HOUGH_GRADIENT,
-      HOUGH.dp,
-      Math.max(8, dim * HOUGH.minDistFrac),
-      HOUGH.param1,
-      HOUGH.param2,
-      Math.max(6, Math.round(dim * HOUGH.minRadiusFrac)),
-      Math.max(20, Math.round(dim * HOUGH.maxRadiusFrac))
-    );
-
-    const out = [];
-    const imgData = canvas.getContext('2d').getImageData(0, 0, state.workW, state.workH);
-    for (let i = 0; i < circles.cols; i++) {
-      const x = circles.data32F[i * 3];
-      const y = circles.data32F[i * 3 + 1];
-      const r = circles.data32F[i * 3 + 2];
-      const rgb = sampleAnnulusColor(imgData, x, y, r);
-      if (!rgb) continue;
-      out.push({ x, y, r, rgb, lab: rgbToLab(rgb[0], rgb[1], rgb[2]) });
-    }
-    return out;
-  } finally {
-    src.delete(); gray.delete(); circles.delete();
+    state.groups = clusterIntoGroups(detections);
+    renderGroups();
+    renderOverlay();
+    setStatus('');
+    showResults();
+  } catch (err) {
+    console.error(err);
+    setStatus('Detection failed: ' + err.message);
   }
 }
 
-function sampleAnnulusColor(imgData, cx, cy, r) {
-  const w = imgData.width, h = imgData.height, data = imgData.data;
-  const rs = [], gs = [], bs = [];
-  const rInner = r * 0.35, rOuter = r * 0.85;
-  const angleSteps = 24, radiusSteps = 4;
-  for (let a = 0; a < angleSteps; a++) {
-    const theta = (a / angleSteps) * Math.PI * 2;
-    for (let s = 0; s < radiusSteps; s++) {
-      const rr = rInner + (rOuter - rInner) * (s / (radiusSteps - 1));
-      const px = Math.round(cx + Math.cos(theta) * rr);
-      const py = Math.round(cy + Math.sin(theta) * rr);
-      if (px < 0 || py < 0 || px >= w || py >= h) continue;
-      const idx = (py * w + px) * 4;
-      rs.push(data[idx]); gs.push(data[idx + 1]); bs.push(data[idx + 2]);
+async function detectChips(session) {
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const targetW = canvas.width, targetH = canvas.height;
+
+  const { tensor, scale, padX, padY } = letterbox(canvas, INPUT_SIZE);
+  const feeds = { [session.inputNames[0]]: tensor };
+  const results = await session.run(feeds);
+  const out0 = results[session.outputNames[0]]; // [1, 4+nc+32, N]
+  const out1 = results[session.outputNames[1]]; // [1, 32, mh, mw]
+
+  const dets = decodeDetections(out0, SCORE_THRESHOLD);
+  const kept = nms(dets, IOU_THRESHOLD);
+  const protoMasks = reconstructMasks(kept, out1);
+
+  const imgPixels = ctx.getImageData(0, 0, targetW, targetH);
+  const out = [];
+  for (let i = 0; i < kept.length; i++) {
+    const det = kept[i];
+    const mask = rasterizeMask(
+      protoMasks[i], det.box, out1.dims[3], out1.dims[2],
+      scale, padX, padY, targetW, targetH
+    );
+    const rgb = sampleMaskColor(imgPixels, mask);
+    if (!rgb) continue;
+
+    // Map bbox from 640-space back to work-canvas space for a center/radius
+    // anchor (used by the overlay center-dot).
+    const [x1, y1, x2, y2] = det.box;
+    const bx1 = (x1 - padX) / scale;
+    const by1 = (y1 - padY) / scale;
+    const bx2 = (x2 - padX) / scale;
+    const by2 = (y2 - padY) / scale;
+    const cx = (bx1 + bx2) / 2;
+    const cy = (by1 + by2) / 2;
+    const r = Math.max(bx2 - bx1, by2 - by1) / 2;
+
+    out.push({
+      x: cx, y: cy, r,
+      rgb, lab: rgbToLab(rgb[0], rgb[1], rgb[2]),
+      mask,
+      score: det.score,
+    });
+  }
+  return out;
+}
+
+function letterbox(srcCanvas, size) {
+  const w0 = srcCanvas.width, h0 = srcCanvas.height;
+  const scale = Math.min(size / w0, size / h0);
+  const w = Math.round(w0 * scale);
+  const h = Math.round(h0 * scale);
+  const padX = Math.floor((size - w) / 2);
+  const padY = Math.floor((size - h) / 2);
+
+  const off = document.createElement('canvas');
+  off.width = size; off.height = size;
+  const octx = off.getContext('2d');
+  octx.fillStyle = 'rgb(114,114,114)';
+  octx.fillRect(0, 0, size, size);
+  octx.drawImage(srcCanvas, padX, padY, w, h);
+  const { data } = octx.getImageData(0, 0, size, size);
+
+  const chw = new Float32Array(3 * size * size);
+  const plane = size * size;
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    chw[p] = data[i] / 255;
+    chw[plane + p] = data[i + 1] / 255;
+    chw[2 * plane + p] = data[i + 2] / 255;
+  }
+  const tensor = new ort.Tensor('float32', chw, [1, 3, size, size]);
+  return { tensor, scale, padX, padY };
+}
+
+function decodeDetections(output, threshold) {
+  // output dims: [1, 4+nc+mc, N]. Stored as [channels, anchors] row-major.
+  const [, , n] = output.dims;
+  const data = output.data;
+  const dets = [];
+  for (let i = 0; i < n; i++) {
+    let bestScore = 0, bestClass = 0;
+    for (let c = 0; c < NUM_CLASSES; c++) {
+      const s = data[(4 + c) * n + i];
+      if (s > bestScore) { bestScore = s; bestClass = c; }
     }
+    if (bestScore < threshold) continue;
+    const cx = data[0 * n + i];
+    const cy = data[1 * n + i];
+    const w = data[2 * n + i];
+    const h = data[3 * n + i];
+    const coeffs = new Float32Array(NUM_MASK_COEFFS);
+    for (let k = 0; k < NUM_MASK_COEFFS; k++) {
+      coeffs[k] = data[(4 + NUM_CLASSES + k) * n + i];
+    }
+    dets.push({
+      box: [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2],
+      score: bestScore,
+      cls: bestClass,
+      coeffs,
+    });
+  }
+  return dets;
+}
+
+function nms(dets, iouThreshold) {
+  dets.sort((a, b) => b.score - a.score);
+  const kept = [];
+  for (const d of dets) {
+    if (kept.every((k) => iou(k.box, d.box) < iouThreshold)) kept.push(d);
+  }
+  return kept;
+}
+
+function iou(a, b) {
+  const x1 = Math.max(a[0], b[0]);
+  const y1 = Math.max(a[1], b[1]);
+  const x2 = Math.min(a[2], b[2]);
+  const y2 = Math.min(a[3], b[3]);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  const aArea = (a[2] - a[0]) * (a[3] - a[1]);
+  const bArea = (b[2] - b[0]) * (b[3] - b[1]);
+  return inter / (aArea + bArea - inter + 1e-9);
+}
+
+function reconstructMasks(dets, protoTensor) {
+  // proto: [1, 32, mh, mw]. Per-det mask = sigmoid(coeffs · proto).
+  const [, mc, mh, mw] = protoTensor.dims;
+  const proto = protoTensor.data;
+  const area = mh * mw;
+  const masks = [];
+  for (const d of dets) {
+    const m = new Float32Array(area);
+    for (let k = 0; k < mc; k++) {
+      const a = d.coeffs[k];
+      const off = k * area;
+      for (let j = 0; j < area; j++) m[j] += a * proto[off + j];
+    }
+    for (let j = 0; j < area; j++) m[j] = 1 / (1 + Math.exp(-m[j]));
+    masks.push(m);
+  }
+  return masks;
+}
+
+function rasterizeMask(mask, box, mw, mh, scale, padX, padY, targetW, targetH) {
+  // Mask lives in a protos-sized grid (typically 160×160) in 640-input-space.
+  // Project detection box into that grid, then resample to image pixels and
+  // threshold into a binary Uint8Array the size of the work canvas.
+  const [x1, y1, x2, y2] = box;
+  const sx = mw / INPUT_SIZE;
+  const sy = mh / INPUT_SIZE;
+  const mx1 = Math.max(0, Math.floor(x1 * sx));
+  const my1 = Math.max(0, Math.floor(y1 * sy));
+  const mx2 = Math.min(mw, Math.ceil(x2 * sx));
+  const my2 = Math.min(mh, Math.ceil(y2 * sy));
+
+  const out = new Uint8Array(targetW * targetH);
+  if (mx2 <= mx1 || my2 <= my1) return out;
+
+  for (let py = 0; py < targetH; py++) {
+    const yIn = py * scale + padY;
+    const ym = yIn * sy;
+    if (ym < my1 || ym >= my2) continue;
+    const ymFloor = Math.min(mh - 1, Math.floor(ym));
+    for (let px = 0; px < targetW; px++) {
+      const xIn = px * scale + padX;
+      const xm = xIn * sx;
+      if (xm < mx1 || xm >= mx2) continue;
+      const xmFloor = Math.min(mw - 1, Math.floor(xm));
+      const v = mask[ymFloor * mw + xmFloor];
+      if (v >= MASK_THRESHOLD) out[py * targetW + px] = 1;
+    }
+  }
+  return out;
+}
+
+function sampleMaskColor(imgPixels, mask) {
+  // Median RGB under the mask. Median (rather than mean) keeps stray rim
+  // pixels and stamped denomination text from shifting the color.
+  const data = imgPixels.data;
+  const rs = [], gs = [], bs = [];
+  for (let i = 0, p = 0; i < mask.length; i++, p += 4) {
+    if (!mask[i]) continue;
+    rs.push(data[p]); gs.push(data[p + 1]); bs.push(data[p + 2]);
   }
   if (rs.length < 8) return null;
   return [median(rs), median(gs), median(bs)];
@@ -279,9 +401,17 @@ function clusterIntoGroups(detections) {
 }
 
 function nearestCanonical(lab) {
+  // Weighted Lab distance with L* heavily down-weighted: chip identity is
+  // mostly hue+chroma, and L* drifts with photo exposure. A tiny non-zero
+  // weight keeps Black distinguishable from saturated colors (Black's a*/b*
+  // are ~0, so without any L* contribution any low-chroma chip ties it).
+  const W_L = 0.1;
   let best = CANONICAL_CHIPS[0], bestD = Infinity;
   for (const c of CANONICAL_CHIPS) {
-    const d = labDist(lab, c.lab);
+    const dL = (lab[0] - c.lab[0]) * W_L;
+    const da = lab[1] - c.lab[1];
+    const db = lab[2] - c.lab[2];
+    const d = dL * dL + da * da + db * db;
     if (d < bestD) { bestD = d; best = c; }
   }
   return best;
@@ -289,10 +419,8 @@ function nearestCanonical(lab) {
 
 
 /* ── Rendering: overlay ───────────────────────────────────────────── */
-/* For each detection: a dark halo (visible on light backgrounds), a
-   thin white inner rim (keeps dark-chip outlines visible on dark
-   photos), the group's color as the main stroke, and a center dot
-   marking the detected center. */
+/* Tints the detection masks with each cluster's average RGB, then drops a
+   small center dot over each chip so eye and row can line up at a glance. */
 function renderOverlay() {
   const canvas = document.getElementById('previewCanvas');
   const ctx = canvas.getContext('2d');
@@ -303,44 +431,37 @@ function renderOverlay() {
     for (const idx of g.memberIdxs) groupByIdx.set(idx, g);
   }
 
-  const w = Math.max(4.5, state.workW / 100);
+  // Blend mask pixels with the group color in a single getImageData pass.
+  const overlay = ctx.getImageData(0, 0, state.workW, state.workH);
+  for (let i = 0; i < state.detections.length; i++) {
+    const g = groupByIdx.get(i);
+    if (!g) continue;
+    const det = state.detections[i];
+    const [r, gc, b] = g.rgb;
+    const mask = det.mask;
+    for (let j = 0, p = 0; j < mask.length; j++, p += 4) {
+      if (!mask[j]) continue;
+      overlay.data[p] = Math.round(overlay.data[p] * 0.35 + r * 0.65);
+      overlay.data[p + 1] = Math.round(overlay.data[p + 1] * 0.35 + gc * 0.65);
+      overlay.data[p + 2] = Math.round(overlay.data[p + 2] * 0.35 + b * 0.65);
+    }
+  }
+  ctx.putImageData(overlay, 0, 0);
 
+  // Center dot per chip: dark halo + group-colored core.
+  const dotR = Math.max(3, state.workW / 260);
   for (let i = 0; i < state.detections.length; i++) {
     const g = groupByIdx.get(i);
     if (!g) continue;
     const d = state.detections[i];
     const [r, gc, b] = g.rgb;
-    const fill = `rgb(${r}, ${gc}, ${b})`;
-
-    // Dark halo
-    ctx.lineWidth = w + 3;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.beginPath();
-    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Bright white inner rim
-    ctx.lineWidth = w + 2.5;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.beginPath();
-    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Group-colored main stroke
-    ctx.lineWidth = w;
-    ctx.strokeStyle = fill;
-    ctx.beginPath();
-    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Center dot
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.beginPath();
-    ctx.arc(d.x, d.y, w * 1.2, 0, Math.PI * 2);
+    ctx.arc(d.x, d.y, dotR * 1.6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = fill;
+    ctx.fillStyle = `rgb(${r}, ${gc}, ${b})`;
     ctx.beginPath();
-    ctx.arc(d.x, d.y, w * 0.7, 0, Math.PI * 2);
+    ctx.arc(d.x, d.y, dotR, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -361,7 +482,14 @@ function renderGroups() {
     const swatch = node.querySelector('.swatch');
     swatch.style.background = `rgb(${r}, ${g}, ${b})`;
 
-    node.querySelector('.group-name').textContent = group.canonical.name;
+    const nameSelect = node.querySelector('.group-name');
+    for (const c of CANONICAL_CHIPS) {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      if (c.name === group.canonical.name) opt.selected = true;
+      nameSelect.appendChild(opt);
+    }
     node.querySelector('.group-hint').textContent = `detected ${group.memberIdxs.length}`;
 
     const countField = node.querySelector('.countField');
@@ -369,6 +497,19 @@ function renderGroups() {
     const subtotalField = node.querySelector('.subtotalField');
     countField.value = group.count;
     denomField.value = group.denom;
+
+    // Changing the type re-binds the group to a new canonical and resets
+    // its denom to that type's default. Swatch stays at the detected RGB —
+    // it's the observed color, not the canonical's reference color.
+    nameSelect.addEventListener('change', () => {
+      const next = CANONICAL_CHIPS.find(c => c.name === nameSelect.value);
+      if (!next) return;
+      group.canonical = next;
+      group.denom = next.denom;
+      denomField.value = next.denom;
+      updateSubtotal(group, subtotalField);
+      updateTotals();
+    });
 
     countField.addEventListener('input', () => {
       group.count = parseInt(countField.value) || 0;
@@ -456,7 +597,7 @@ document.getElementById('photoInput').addEventListener('change', (e) => {
 document.getElementById('redetectBtn').addEventListener('click', () => {
   if (state.imageBitmap) {
     drawImageToCanvas(state.imageBitmap);
-    runDetection(state.imageBitmap);
+    runDetection();
   }
 });
 
@@ -477,3 +618,7 @@ dropzone.addEventListener('drop', (e) => {
   const file = e.dataTransfer.files && e.dataTransfer.files[0];
   if (file) handleFile(file);
 });
+
+// Start warming up the model in the background so the first detection is
+// faster — best-effort, surface nothing to the user if it fails here.
+loadSession().catch(err => console.warn('model preload failed:', err));

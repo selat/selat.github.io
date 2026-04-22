@@ -121,7 +121,7 @@
       <div class="group-head">
         <span class="swatch" aria-hidden="true"></span>
         <div class="group-label">
-          <span class="group-name"></span>
+          <select class="group-name" aria-label="Chip type"></select>
           <span class="group-hint eyebrow micro"></span>
         </div>
         <button type="button" class="btn-remove" aria-label="Remove chip type">
@@ -154,10 +154,8 @@
     </div>
   </template>
 
-  <!-- Load chips.js first so window.onOpenCvReady is defined before the
-       async opencv.js may fire its onload handler. -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
   <script src="chips.js"></script>
-  <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
 </body>
 
 </html>
