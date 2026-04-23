@@ -85,9 +85,15 @@
     }
   }
 
+  function getParamDefs() {
+    const p = currentApproach.params;
+    if (typeof p === 'function') return p(currentPreset) || [];
+    return p || [];
+  }
+
   function buildParamSliders() {
     paramSlidersEl.innerHTML = '';
-    const defs = currentApproach.params || [];
+    const defs = getParamDefs();
     for (const pp of defs) {
       const lab = document.createElement('label');
       lab.className = 'param';
@@ -133,7 +139,7 @@
     currentPreset = p;
     presetSelect.value = name;
     params = {};
-    for (const pp of currentApproach.params || []) params[pp.key] = pp.default;
+    for (const pp of getParamDefs()) params[pp.key] = pp.default;
     if (p.params) Object.assign(params, p.params);
     buildParamSliders();
     world = {};
