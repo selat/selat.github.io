@@ -1,0 +1,156 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  color: #ccc;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  height: 100%;
+}
+
+#main {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: grab;
+  touch-action: none;
+}
+
+#main.dragging {
+  cursor: grabbing;
+}
+
+#hud {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+}
+
+#controls {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: rgba(20, 20, 24, 0.85);
+  border: 1px solid #333;
+  border-radius: 8px;
+  font-size: 13px;
+  user-select: none;
+  max-width: calc(100vw - 32px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#controls button {
+  background: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  width: 32px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+#controls button:hover {
+  background: #2a2a30;
+}
+
+#controls select {
+  background: #1a1a1e;
+  border: 1px solid #444;
+  color: #ccc;
+  height: 28px;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#controls .speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#controls input[type="range"] {
+  width: 140px;
+}
+
+#speedLabel {
+  min-width: 70px;
+  opacity: 0.8;
+}
+
+#paramSliders {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#paramSliders .param {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+#paramSliders .param input[type="range"] {
+  width: 90px;
+}
+
+#paramSliders .param .val {
+  min-width: 36px;
+  opacity: 0.8;
+  text-align: right;
+}
+
+@media (max-width: 700px) {
+  #controls {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    bottom: 10px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  #controls button {
+    width: 40px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  #controls select {
+    height: 36px;
+    font-size: 13px;
+  }
+
+  #controls input[type="range"] {
+    width: 110px;
+  }
+
+  #paramSliders .param input[type="range"] {
+    width: 70px;
+  }
+
+  #speedLabel {
+    min-width: 50px;
+    font-size: 11px;
+  }
+
+  #hud {
+    font-size: 11px;
+  }
+}
