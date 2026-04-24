@@ -184,12 +184,22 @@
   let panState = null;
   const pointers = new Map();
   let pinchState = null;
+  let clickCandidate = null; // pointerId + start position; cancelled on pan/pinch
+
+  const CLICK_MAX_DIST_SQ = 36; // 6px
+  const CLICK_MAX_TIME = 400;   // ms
 
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   canvas.addEventListener('pointerdown', (e) => {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+
+    if (pointers.size === 1) {
+      clickCandidate = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
+    } else {
+      clickCandidate = null;
+    }
 
     if (e.pointerType === 'mouse') {
       panState = { lastX: e.clientX, lastY: e.clientY };
@@ -215,6 +225,12 @@
     }
     lastMouse.x = e.clientX;
     lastMouse.y = e.clientY;
+
+    if (clickCandidate && clickCandidate.pointerId === e.pointerId) {
+      const dx = e.clientX - clickCandidate.x;
+      const dy = e.clientY - clickCandidate.y;
+      if (dx * dx + dy * dy > CLICK_MAX_DIST_SQ) clickCandidate = null;
+    }
 
     if (e.pointerType === 'mouse') {
       if (panState) {
@@ -261,6 +277,17 @@
     }
   });
 
+  function maybeFireClick(e) {
+    if (!clickCandidate || clickCandidate.pointerId !== e.pointerId) return;
+    const dt = performance.now() - clickCandidate.t;
+    clickCandidate = null;
+    if (dt > CLICK_MAX_TIME) return;
+    if (currentApproach && currentApproach.onClick) {
+      const w = screenToWorld(e.clientX, e.clientY);
+      currentApproach.onClick(w.x, w.y, world, params);
+    }
+  }
+
   function endPointer(e) {
     const entry = pointers.get(e.pointerId);
     pointers.delete(e.pointerId);
@@ -270,12 +297,14 @@
         panState = null;
         canvas.classList.remove('dragging');
       }
+      maybeFireClick(e);
       return;
     }
 
     if (pointers.size === 0) {
       panState = null;
       pinchState = null;
+      maybeFireClick(e);
     } else if (pointers.size === 1) {
       pinchState = null;
       const remaining = [...pointers.values()][0];
@@ -284,7 +313,10 @@
   }
 
   canvas.addEventListener('pointerup', endPointer);
-  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('pointercancel', (e) => {
+    clickCandidate = null;
+    endPointer(e);
+  });
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
