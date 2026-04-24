@@ -312,10 +312,224 @@
     },
   ];
 
+  // ---------- Roads tileset (top-down city grid) ----------
+
+  const ROAD_GRASS = '#1f3a22';
+  const ROAD_ASPHALT = '#2d2d33';
+  const ROAD_LANE = '#e0c458';
+  const ROAD_WIDTH_FRAC = 0.6;
+
+  function drawRoadGrass(ctx, s) {
+    ctx.fillStyle = ROAD_GRASS;
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+  }
+
+  function drawHorizontalBand(ctx, s) {
+    const w = s * ROAD_WIDTH_FRAC;
+    ctx.fillStyle = ROAD_ASPHALT;
+    ctx.fillRect(-s / 2, -w / 2, s, w);
+  }
+
+  function drawVerticalBand(ctx, s) {
+    const w = s * ROAD_WIDTH_FRAC;
+    ctx.fillStyle = ROAD_ASPHALT;
+    ctx.fillRect(-w / 2, -s / 2, w, s);
+  }
+
+  function drawCornerSW(ctx, s) {
+    const w = s * ROAD_WIDTH_FRAC;
+    const inner = s / 2 - w / 2;
+    const outer = s / 2 + w / 2;
+    ctx.fillStyle = ROAD_ASPHALT;
+    ctx.beginPath();
+    ctx.arc(-s / 2, s / 2, outer, -Math.PI / 2, 0);
+    ctx.arc(-s / 2, s / 2, inner, 0, -Math.PI / 2, true);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawDashedHorizontal(ctx, s) {
+    ctx.strokeStyle = ROAD_LANE;
+    ctx.lineWidth = Math.max(1, s * 0.035);
+    ctx.setLineDash([s * 0.14, s * 0.08]);
+    ctx.beginPath();
+    ctx.moveTo(-s / 2, 0);
+    ctx.lineTo(s / 2, 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const ROADS_TILES = [
+    {
+      name: 'grass',
+      sockets: [0, 0, 0, 0],
+      weight: 2.0,
+      rotations: [0],
+      draw(ctx, s) { drawRoadGrass(ctx, s); },
+    },
+    {
+      name: 'straight',
+      sockets: [0, 1, 0, 1],
+      weight: 1.0,
+      rotations: [0, 1],
+      draw(ctx, s) {
+        drawRoadGrass(ctx, s);
+        drawHorizontalBand(ctx, s);
+        drawDashedHorizontal(ctx, s);
+      },
+    },
+    {
+      name: 'corner',
+      sockets: [0, 0, 1, 1],
+      weight: 0.5,
+      rotations: [0, 1, 2, 3],
+      draw(ctx, s) {
+        drawRoadGrass(ctx, s);
+        drawCornerSW(ctx, s);
+      },
+    },
+    {
+      name: 'tee',
+      sockets: [0, 1, 1, 1],
+      weight: 0.3,
+      rotations: [0, 1, 2, 3],
+      draw(ctx, s) {
+        drawRoadGrass(ctx, s);
+        drawHorizontalBand(ctx, s);
+        const w = s * ROAD_WIDTH_FRAC;
+        ctx.fillStyle = ROAD_ASPHALT;
+        ctx.fillRect(-w / 2, 0, w, s / 2);
+      },
+    },
+    {
+      name: 'cross',
+      sockets: [1, 1, 1, 1],
+      weight: 0.15,
+      rotations: [0],
+      draw(ctx, s) {
+        drawRoadGrass(ctx, s);
+        drawHorizontalBand(ctx, s);
+        drawVerticalBand(ctx, s);
+      },
+    },
+  ];
+
+  // ---------- Stained Glass tileset ----------
+
+  const GLASS_PALETTE = [
+    '#8a2342', // ruby
+    '#1c4d8c', // sapphire
+    '#2d6d4a', // emerald
+    '#b78c30', // amber
+    '#5a2a7a', // amethyst
+    '#a54526', // rust
+  ];
+  const GLASS_LEAD = '#0c0806';
+  const GLASS_SHINE = 'rgba(255, 255, 255, 0.10)';
+
+  function glassColor(x, y) {
+    let h = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+    h = ((h ^ (h >>> 13)) * 1274126177) >>> 0;
+    h = (h ^ (h >>> 16)) >>> 0;
+    return GLASS_PALETTE[h % GLASS_PALETTE.length];
+  }
+
+  function drawGlassFill(ctx, s, x, y) {
+    ctx.fillStyle = glassColor(x, y);
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+    ctx.fillStyle = GLASS_SHINE;
+    ctx.beginPath();
+    ctx.moveTo(-s / 2, -s / 2);
+    ctx.lineTo(-s / 2 + s * 0.4, -s / 2);
+    ctx.lineTo(-s / 2, -s / 2 + s * 0.4);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function strokeLead(ctx, s, drawPath) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = GLASS_LEAD;
+    ctx.lineWidth = Math.max(2, s * 0.14);
+    drawPath(ctx, s);
+    ctx.stroke();
+  }
+
+  const GLASS_TILES = [
+    {
+      name: 'pane',
+      sockets: [0, 0, 0, 0],
+      weight: 1.2,
+      rotations: [0],
+      draw(ctx, s, x, y) { drawGlassFill(ctx, s, x, y); },
+    },
+    {
+      name: 'straight',
+      sockets: [0, 1, 0, 1],
+      weight: 1.0,
+      rotations: [0, 1],
+      draw(ctx, s, x, y) {
+        drawGlassFill(ctx, s, x, y);
+        strokeLead(ctx, s, (c, ss) => {
+          c.beginPath();
+          c.moveTo(-ss / 2, 0);
+          c.lineTo(ss / 2, 0);
+        });
+      },
+    },
+    {
+      name: 'corner',
+      sockets: [0, 0, 1, 1],
+      weight: 0.9,
+      rotations: [0, 1, 2, 3],
+      draw(ctx, s, x, y) {
+        drawGlassFill(ctx, s, x, y);
+        strokeLead(ctx, s, (c, ss) => {
+          c.beginPath();
+          c.arc(-ss / 2, ss / 2, ss / 2, -Math.PI / 2, 0);
+        });
+      },
+    },
+    {
+      name: 'tee',
+      sockets: [0, 1, 1, 1],
+      weight: 0.3,
+      rotations: [0, 1, 2, 3],
+      draw(ctx, s, x, y) {
+        drawGlassFill(ctx, s, x, y);
+        strokeLead(ctx, s, (c, ss) => {
+          c.beginPath();
+          c.moveTo(-ss / 2, 0);
+          c.lineTo(ss / 2, 0);
+          c.moveTo(0, 0);
+          c.lineTo(0, ss / 2);
+        });
+      },
+    },
+    {
+      name: 'cross',
+      sockets: [1, 1, 1, 1],
+      weight: 0.15,
+      rotations: [0],
+      draw(ctx, s, x, y) {
+        drawGlassFill(ctx, s, x, y);
+        strokeLead(ctx, s, (c, ss) => {
+          c.beginPath();
+          c.moveTo(-ss / 2, 0);
+          c.lineTo(ss / 2, 0);
+          c.moveTo(0, -ss / 2);
+          c.lineTo(0, ss / 2);
+        });
+      },
+    },
+  ];
+
   const PRESETS = [
     { name: 'Circuit', tiles: CIRCUIT_TILES },
     { name: 'Rooms', tiles: ROOMS_TILES },
     { name: 'Knots', tiles: KNOTS_TILES },
+    { name: 'Roads', tiles: ROADS_TILES },
+    { name: 'Glass', tiles: GLASS_TILES },
   ];
 
   // Precomputed entropy-tint palette (dark teal → brighter) for cell bg.
@@ -479,16 +693,16 @@
     }
   }
 
-  function drawVariant(ctx, cx, cy, s, variant, baseTiles) {
+  function drawVariant(ctx, cx, cy, s, variant, baseTiles, gx, gy) {
     const base = baseTiles[variant.baseIdx];
     ctx.save();
     ctx.translate(cx, cy);
     if (variant.rot) ctx.rotate(variant.rot * Math.PI / 2);
-    base.draw(ctx, s);
+    base.draw(ctx, s, gx, gy);
     ctx.restore();
   }
 
-  function drawVariantAlpha(ctx, cx, cy, s, variant, baseTiles, alpha) {
+  function drawVariantAlpha(ctx, cx, cy, s, variant, baseTiles, alpha, gx, gy) {
     const base = baseTiles[variant.baseIdx];
     if (base.drawGhost) { base.drawGhost(ctx, s); return; }
     const prev = ctx.globalAlpha;
@@ -496,7 +710,7 @@
     ctx.save();
     ctx.translate(cx, cy);
     if (variant.rot) ctx.rotate(variant.rot * Math.PI / 2);
-    base.draw(ctx, s);
+    base.draw(ctx, s, gx, gy);
     ctx.restore();
     ctx.globalAlpha = prev;
   }
@@ -620,7 +834,7 @@
           const cx = gridOrigin.x + (x + 0.5) * s;
           const cy = gridOrigin.y + (y + 0.5) * s;
           if (c.collapsed >= 0) {
-            drawVariant(ctx, cx, cy, s, variants[c.collapsed], baseTiles);
+            drawVariant(ctx, cx, cy, s, variants[c.collapsed], baseTiles, x, y);
             continue;
           }
           const count = popcount(c.mask);
@@ -630,7 +844,7 @@
             while (m) {
               const t = 31 - Math.clz32(m);
               m &= ~(1 << t);
-              drawVariantAlpha(ctx, cx, cy, s, variants[t], baseTiles, alpha);
+              drawVariantAlpha(ctx, cx, cy, s, variants[t], baseTiles, alpha, x, y);
             }
           }
         }
