@@ -23,17 +23,50 @@
     return out;
   }
 
+  // Corner-based tiles: each tile declares 4 corner biome values
+  // [NW, NE, SE, SW]. CW rotation cycles them SW→NW→NE→SE→SW.
+  function rotateCorners(corners, r) {
+    let c = corners.slice();
+    for (let i = 0; i < r; i++) c = [c[3], c[0], c[1], c[2]];
+    return c;
+  }
+
+  // Edge sockets derived from corner pairs. Encoding is consistent so that
+  // two touching edges share the same pair in the same order:
+  //   N = (NW, NE) left-to-right       (shared with neighbour's S = (SW, SE))
+  //   E = (NE, SE) top-to-bottom       (shared with neighbour's W = (NW, SW))
+  //   S = (SW, SE) left-to-right
+  //   W = (NW, SW) top-to-bottom
+  function cornersToSockets(corners, radix) {
+    const [nw, ne, se, sw] = corners;
+    return [
+      nw * radix + ne,
+      ne * radix + se,
+      sw * radix + se,
+      nw * radix + sw,
+    ];
+  }
+
   function buildVariants(baseTiles) {
+    // If any tile uses corner-based sockets, derive a radix from the max
+    // biome value (radix = max + 1).
+    let radix = 2;
+    for (const t of baseTiles) {
+      if (t.corners) {
+        for (const c of t.corners) if (c + 1 > radix) radix = c + 1;
+      }
+    }
     const variants = [];
     for (let i = 0; i < baseTiles.length; i++) {
       const base = baseTiles[i];
       for (const rot of base.rotations) {
-        variants.push({
-          baseIdx: i,
-          rot,
-          sockets: rotateSockets(base.sockets, rot),
-          weight: base.weight,
-        });
+        let sockets;
+        if (base.corners) {
+          sockets = cornersToSockets(rotateCorners(base.corners, rot), radix);
+        } else {
+          sockets = rotateSockets(base.sockets, rot);
+        }
+        variants.push({ baseIdx: i, rot, sockets, weight: base.weight });
       }
     }
     if (variants.length > 31) {
@@ -524,12 +557,132 @@
     },
   ];
 
+  // ---------- Biome-region renderer (marching-squares) ----------
+  // corners are 0 (bg) or 1 (fg). Covers the 16 corner configurations using
+  // pie wedges at corners, rectangles for half-splits, and one fill + punched
+  // corner for 3-corner cases. Used by Coastline and Terrain.
+
+  function drawRegion(ctx, s, corners, fg, bg) {
+    const [nw, ne, se, sw] = corners;
+    const count = nw + ne + se + sw;
+    const h = s / 2;
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(-h, -h, s, s);
+
+    if (count === 0) return;
+    if (count === 4) {
+      ctx.fillStyle = fg;
+      ctx.fillRect(-h, -h, s, s);
+      return;
+    }
+
+    const pieCenters = [[-h, -h], [h, -h], [h, h], [-h, h]];
+    const pieAngles = [
+      [0, Math.PI / 2],
+      [Math.PI / 2, Math.PI],
+      [Math.PI, 1.5 * Math.PI],
+      [-Math.PI / 2, 0],
+    ];
+
+    function pieAt(idx) {
+      const [cx, cy] = pieCenters[idx];
+      const [a0, a1] = pieAngles[idx];
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, h, a0, a1);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (count === 3) {
+      ctx.fillStyle = fg;
+      ctx.fillRect(-h, -h, s, s);
+      ctx.fillStyle = bg;
+      const missing = !nw ? 0 : !ne ? 1 : !se ? 2 : 3;
+      pieAt(missing);
+      return;
+    }
+
+    ctx.fillStyle = fg;
+
+    if (count === 1) {
+      const which = nw ? 0 : ne ? 1 : se ? 2 : 3;
+      pieAt(which);
+      return;
+    }
+
+    // count === 2
+    if (nw && ne) { ctx.fillRect(-h, -h, s, h); return; }
+    if (ne && se) { ctx.fillRect(0, -h, h, s); return; }
+    if (se && sw) { ctx.fillRect(-h, 0, s, h); return; }
+    if (sw && nw) { ctx.fillRect(-h, -h, h, s); return; }
+    if (nw && se) { pieAt(0); pieAt(2); return; }
+    if (ne && sw) { pieAt(1); pieAt(3); return; }
+  }
+
+  // ---------- Coastline tileset (water / land) ----------
+
+  const COAST_WATER = '#1c4d80';
+  const COAST_LAND = '#4a7232';
+
+  function coastTile(corners) {
+    return {
+      name: 'c' + corners.join(''),
+      corners,
+      draw(ctx, s) { drawRegion(ctx, s, corners, COAST_LAND, COAST_WATER); },
+    };
+  }
+
+  const COASTLINE_TILES = [
+    { ...coastTile([0, 0, 0, 0]), weight: 1.5, rotations: [0] },
+    { ...coastTile([1, 0, 0, 0]), weight: 0.4, rotations: [0, 1, 2, 3] },
+    { ...coastTile([1, 1, 0, 0]), weight: 0.8, rotations: [0, 1, 2, 3] },
+    { ...coastTile([1, 0, 1, 0]), weight: 0.05, rotations: [0, 1] },
+    { ...coastTile([1, 1, 1, 0]), weight: 0.5, rotations: [0, 1, 2, 3] },
+    { ...coastTile([1, 1, 1, 1]), weight: 1.0, rotations: [0] },
+  ];
+
+  // ---------- Terrain tileset (water / sand / grass) ----------
+
+  const TERRAIN_COLORS = ['#1c4d80', '#d4b878', '#4a7232'];
+
+  function terrainTile(corners) {
+    const lo = Math.min(...corners);
+    const hi = Math.max(...corners);
+    const binary = corners.map((c) => (c === hi ? 1 : 0));
+    return {
+      name: 't' + corners.join(''),
+      corners,
+      draw(ctx, s) { drawRegion(ctx, s, binary, TERRAIN_COLORS[hi], TERRAIN_COLORS[lo]); },
+    };
+  }
+
+  // 3 pure tiles + 12 water-sand transitions + 12 sand-grass transitions = 27.
+  // No water-grass direct transitions (must go through sand), and no
+  // opposite-corner configurations (too rare to be worth the variant budget).
+  const TERRAIN_TILES = [
+    { ...terrainTile([0, 0, 0, 0]), weight: 1.2, rotations: [0] },
+    { ...terrainTile([1, 1, 1, 1]), weight: 0.5, rotations: [0] },
+    { ...terrainTile([2, 2, 2, 2]), weight: 1.0, rotations: [0] },
+    // water ↔ sand
+    { ...terrainTile([1, 0, 0, 0]), weight: 0.3, rotations: [0, 1, 2, 3] },
+    { ...terrainTile([1, 1, 0, 0]), weight: 0.5, rotations: [0, 1, 2, 3] },
+    { ...terrainTile([1, 1, 1, 0]), weight: 0.4, rotations: [0, 1, 2, 3] },
+    // sand ↔ grass
+    { ...terrainTile([2, 1, 1, 1]), weight: 0.3, rotations: [0, 1, 2, 3] },
+    { ...terrainTile([2, 2, 1, 1]), weight: 0.5, rotations: [0, 1, 2, 3] },
+    { ...terrainTile([2, 2, 2, 1]), weight: 0.4, rotations: [0, 1, 2, 3] },
+  ];
+
   const PRESETS = [
     { name: 'Circuit', tiles: CIRCUIT_TILES },
     { name: 'Rooms', tiles: ROOMS_TILES },
     { name: 'Knots', tiles: KNOTS_TILES },
     { name: 'Roads', tiles: ROADS_TILES },
     { name: 'Glass', tiles: GLASS_TILES },
+    { name: 'Coastline', tiles: COASTLINE_TILES },
+    { name: 'Terrain', tiles: TERRAIN_TILES },
   ];
 
   // Precomputed entropy-tint palette (dark teal → brighter) for cell bg.
