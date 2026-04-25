@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="styles.css">
+  <title>Ferrofluid</title>
+</head>
+<body>
+  <canvas id="main"></canvas>
+  <div id="hud">
+    <div id="scoreLine">score <span id="score">0</span></div>
+    <div id="perf">—</div>
+  </div>
+  <div id="hint">drag to attract · avoid red repellers · cover the ring to score</div>
+  <div id="controls">
+    <label>
+      <span>drops</span>
+      <input type="range" id="count" min="200" max="2000" step="50" value="1000">
+      <span id="countLabel">1000</span>
+    </label>
+    <button id="reset" title="Reset">↻</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
