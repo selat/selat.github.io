@@ -25,6 +25,12 @@ const MASK_THRESHOLD = 0.5;
 const NUM_CLASSES = 1;
 const NUM_MASK_COEFFS = 32;
 
+// Pinned to match the script tag in chips.html and the URLs precached
+// by sw.js. Setting wasmPaths explicitly keeps ort from guessing — every
+// runtime fetch then matches a SW cache entry, so chips work fully offline.
+const ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+ort.env.wasm.wasmPaths = ORT_BASE;
+
 
 /* ── Canonical chip colors (typical US cash game) ─────────────────── */
 const CANONICAL_CHIPS = [

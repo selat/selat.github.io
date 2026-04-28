@@ -5,13 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0c0f0d" />
-  <title>The Pot · Count Chips</title>
+  <title>Cash Game Calculator · Count Chips</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Geist:wght@400;500;600&display=swap"
-    rel="stylesheet" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-apple-180.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cash Game" />
 
   <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -31,7 +33,7 @@
           stroke-linejoin="round" width="16" height="16" aria-hidden="true">
           <path d="m15 18-6-6 6-6" />
         </svg>
-        <span>The Pot</span>
+        <span>Settlement</span>
       </a>
     </header>
 
@@ -154,8 +156,15 @@
     </div>
   </template>
 
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
   <script src="chips.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 
 </html>
