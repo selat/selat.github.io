@@ -14,7 +14,7 @@
    ════════════════════════════════════════════════════════════════════ */
 
 
-const CACHE_VERSION = 'cgc-v3';
+const CACHE_VERSION = 'cgc-v4';
 
 // Pin ORT version — must match the <script src=…> in chips.html and
 // the wasmPaths set in chips.js. Changing the version requires bumping
