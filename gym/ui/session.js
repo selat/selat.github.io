@@ -452,8 +452,6 @@ function commandCard(entry) {
   const head = el('div', 'command-card-head');
   head.append(html('span', null,
     draftIsWarmup ? `▶ WARMUP · NOW` : `▶ SET ${setNum} · NOW`));
-  const targetLabel = lastSetSummary(entry.exerciseId);
-  head.append(html('span', 'target', targetLabel ? `LAST · ${targetLabel.toUpperCase()}` : 'NEW EXERCISE'));
   card.append(head);
 
   const steppers = el('div', 'command-card-steppers');
@@ -538,6 +536,29 @@ function primaryAction(session, entry) {
 
   const total = session.entries.length;
   const isLast = currentEntryIdx === total - 1;
+  const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
+  const plannedDone = !draftIsWarmup && workingDone >= plannedWorkingSetCount(entry.exerciseId);
+
+  // Once all planned working sets are logged, swap LOG SET for the
+  // primary advance action (NEXT EXERCISE, or REVIEW WORKOUT on the
+  // last one).
+  if (plannedDone) {
+    const advance = el('button', 'btn-primary');
+    advance.style.justifyContent = 'space-between';
+    if (isLast) {
+      advance.innerHTML = '<span>REVIEW WORKOUT</span><span>→</span>';
+      advance.addEventListener('click', () => go('workout'));
+    } else {
+      advance.innerHTML = '<span>NEXT EXERCISE</span><span>→</span>';
+      advance.addEventListener('click', () => {
+        currentEntryIdx++;
+        resetDraft();
+        refreshCard();
+      });
+    }
+    wrap.append(advance);
+    return wrap;
+  }
 
   const btn = el('button', 'btn-primary');
   btn.style.justifyContent = 'space-between';
@@ -573,33 +594,7 @@ function primaryAction(session, entry) {
     // user typically does the same load again. They can nudge between sets.
   });
   wrap.append(btn);
-
-  // Secondary: advance to next exercise, or — on the last exercise once at
-  // least one working set is logged — jump to the workout overview to review.
-  if (!isLast) {
-    const nextBtn = el('button', 'btn-secondary');
-    nextBtn.style.width = '100%';
-    nextBtn.style.marginTop = '6px';
-    nextBtn.textContent = 'NEXT EXERCISE →';
-    nextBtn.addEventListener('click', () => {
-      currentEntryIdx++;
-      resetDraft();
-      refreshCard();
-    });
-    wrap.append(nextBtn);
-  } else if (entryDone(entry)) {
-    const reviewBtn = el('button', 'btn-secondary');
-    reviewBtn.style.width = '100%';
-    reviewBtn.style.marginTop = '6px';
-    reviewBtn.textContent = 'REVIEW WORKOUT →';
-    reviewBtn.addEventListener('click', () => go('workout'));
-    wrap.append(reviewBtn);
-  }
   return wrap;
-}
-
-function entryDone(entry) {
-  return entry.sets.some((s) => !s.isWarmup);
 }
 
 function addExerciseBtn() {
