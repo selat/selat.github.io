@@ -173,8 +173,8 @@
   letter-spacing: 0.04em;
   line-height: 1.5;
 }
-.today-cta-why .good   { color: var(--good);   font-weight: 700; }
-.today-cta-why .danger { color: var(--danger); font-weight: 700; }
+.today-cta-why .good   { color: var(--bg); font-weight: 700; }
+.today-cta-why .danger { color: var(--bg); font-weight: 700; }
 .today-cta.empty {
   background: transparent;
   border: 1px dashed var(--line);
@@ -231,6 +231,11 @@
   text-transform: uppercase;
   font-weight: 700;
   margin-right: 4px;
+}
+.autogen-rationale .pill {
+  color: var(--bg);
+  border-color: rgba(10, 11, 10, 0.35);
+  background: transparent;
 }
 
 

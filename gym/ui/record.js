@@ -121,7 +121,7 @@ function rationaleLines(suggestion) {
     row.append(html('span', 'lbl', 'TARGETS'));
     for (const [m, r] of targets) {
       const label = (MUSCLES[m]?.label ?? m).toUpperCase();
-      const p = el('span', 'pill good filled');
+      const p = el('span', 'pill');
       p.textContent = `${label} ${Math.round(r * 100)}`;
       row.append(p);
     }
@@ -138,7 +138,7 @@ function rationaleLines(suggestion) {
     row.append(html('span', 'lbl', 'AVOIDS'));
     for (const [m, v] of cooked) {
       const label = (MUSCLES[m]?.label ?? m).toUpperCase();
-      const p = el('span', 'pill danger filled');
+      const p = el('span', 'pill');
       p.textContent = `${label} ${Math.round(v.recovery * 100)}`;
       row.append(p);
     }

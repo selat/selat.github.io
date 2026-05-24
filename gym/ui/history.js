@@ -82,42 +82,32 @@ export function renderHistory(container) {
 
 function aggregateStrip() {
   const weeks = lastNWeeks(4);
-  let sessions = 0, vol = 0, prs = 0;
-  for (const w of weeks) { sessions += w.sessions; vol += w.volume; prs += w.prs; }
+  let sessions = 0, vol = 0, durationSec = 0;
+  for (const w of weeks) { sessions += w.sessions; vol += w.volume; durationSec += w.durationSec; }
 
-  const wrap = el('div');
-  wrap.style.padding = '12px 16px 14px';
-  wrap.style.borderBottom = '1px solid var(--line)';
-  wrap.append(html('div', 'eyebrow', 'LAST 4 WEEKS'));
-
-  const row = el('div');
-  row.style.display = 'flex';
-  row.style.alignItems = 'baseline';
-  row.style.gap = '14px';
-  row.style.marginTop = '6px';
-  row.style.fontVariantNumeric = 'tabular-nums';
-
-  row.append(aggCell(String(sessions), 'SESSIONS', 'var(--ink)'));
-  row.append(html('span', 'dim', '│'));
-  row.append(aggCell(formatKilo(vol), 'VOLUME · KG', 'var(--ink)'));
-  row.append(html('span', 'dim', '│'));
-  row.append(aggCell(String(prs), 'PR', prs > 0 ? 'var(--accent)' : 'var(--ink)'));
-
-  wrap.append(row);
+  const wrap = el('div', 'body-pad');
+  wrap.append(divider('LAST 4 WEEKS'));
+  const grid = el('div', 'stat-grid cols-3');
+  grid.append(statCellShort('VOLUME', formatKilo(vol), 'kg'));
+  grid.append(statCellShort('SESSIONS', String(sessions)));
+  grid.append(statCellShort('TRAIN TIME', Math.round(durationSec / 3600) + 'h'));
+  wrap.append(grid);
   return wrap;
 }
 
-function aggCell(value, label, color) {
-  const c = el('div');
-  c.style.display = 'flex';
-  c.style.alignItems = 'baseline';
-  c.style.gap = '5px';
-  const v = el('span', 'stat-value');
-  v.style.color = color;
-  v.textContent = value;
-  c.append(v);
-  c.append(html('span', 'eyebrow', label));
-  return c;
+function statCellShort(label, value, unit) {
+  const cell = el('div', 'stat-cell');
+  const inner = el('div', 'stat stat-md');
+  inner.append(el('span', 'stat-label', label));
+  const row = el('div');
+  row.style.display = 'flex';
+  row.style.alignItems = 'baseline';
+  row.style.gap = '3px';
+  row.append(el('span', 'stat-value', value));
+  if (unit) row.append(el('span', 'stat-unit', unit));
+  inner.append(row);
+  cell.append(inner);
+  return cell;
 }
 
 function formatKilo(v) {
