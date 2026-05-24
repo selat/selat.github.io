@@ -1,0 +1,521 @@
+/* ════════════════════════════════════════════════════════════════════
+   THEME.CSS — REP.LOG design system
+   ════════════════════════════════════════════════════════════════════
+   Terminal / phosphor-CRT aesthetic. Sharp rectangles, JetBrains Mono
+   everywhere, dot-grid + scan-line backdrop, single phosphor-green accent,
+   ALL CAPS for system labels, tabular numerics throughout. No rounded
+   corners. The visual language is set up so app-specific styles can
+   compose without re-introducing soft shapes or extra type families.
+   ════════════════════════════════════════════════════════════════════ */
+
+
+:root {
+  /* ── Type scale (rem-based so the OS text-size preference scales us). */
+  --t-xs:   0.6875rem;  /* 11px — micro labels, axis ticks, day letters */
+  --t-sm:   0.75rem;    /* 12px — pill text, table secondary */
+  --t-base: 0.8125rem;  /* 13px — default body, list rows */
+  --t-md:   0.9375rem;  /* 15px — list item primary, button text */
+  --t-lg:   1.1875rem;  /* 19px — screen titles, exercise names */
+  --t-xl:   1.75rem;    /* 28px — prominent stat values */
+  --t-2xl:  3.5rem;     /* 56px — timer countdown only */
+
+  /* ── Surfaces */
+  --bg:        #0a0b0a;
+  --surface:   #0f1110;
+  --ink:       #e8f0e6;
+  --ink-soft:  #8a9489;
+  --ink-muted: #4a544a;
+  --line:      #2a2e2a;
+  --line-soft: #1a1c1a;
+
+  /* ── Accent — phosphor green. oklch when supported, hex fallback */
+  --accent:    #6fe06b;
+  --accent:    oklch(0.85 0.18 142);
+  --accent-fg: #0a0b0a;
+
+  /* ── Semantic */
+  --good:      oklch(0.85 0.18 142);
+  --warn:      oklch(0.78 0.15 75);
+  --danger:    oklch(0.65 0.22 25);
+
+  /* ── Backdrop layers */
+  --grid:      rgba(180, 255, 180, 0.025);
+  --scan:      repeating-linear-gradient(0deg,
+                rgba(180, 255, 180, 0.02) 0 1px,
+                transparent 1px 3px);
+
+  /* ── Fonts */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+
+/* ── Reset & base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  position: relative;
+  /* Long-press selection on touch picks up content; inputs opt back in. */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Dot grid + faint scan lines — applied to .shell so it doesn't tile
+     under the fixed tab bar's blur. */
+}
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button { font: inherit; cursor: pointer; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+
+/* ── Shell — backdrop with the phosphor grid + scan lines ─────────── */
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top, 0);
+  /* Bottom padding clears the tab bar (~66px) + safe area. */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 5rem);
+  min-height: 100vh;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px),
+    var(--scan);
+  background-size: 13px 13px, 13px 13px, auto;
+}
+
+
+/* ── Layout primitives ────────────────────────────────────────────── */
+.row         { display: flex; align-items: center; gap: 0.5rem; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.row-baseline{ display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.stack       { display: flex; flex-direction: column; }
+.grid-2      { display: grid; grid-template-columns: 1fr 1fr; }
+.grid-3      { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.grid-4      { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.flex-1      { flex: 1; min-width: 0; }
+.muted       { color: var(--ink-soft); }
+.dim         { color: var(--ink-muted); }
+.tnum        { font-variant-numeric: tabular-nums; }
+
+
+/* ── Typography ───────────────────────────────────────────────────── */
+
+/* ALL CAPS micro-label — used everywhere for system labels. */
+.eyebrow {
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.eyebrow.accent { color: var(--accent); }
+.eyebrow.dim    { color: var(--ink-muted); }
+
+/* Screen title — 19px, tight tracking, bold. */
+.title {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* Prominent stat value */
+.stat-value {
+  font-size: var(--t-xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Body text bumped to medium weight for the mono setting (mono is light by default). */
+.bold { font-weight: 700; }
+
+
+/* ── Stat block ────────────────────────────────────────────────────
+   Used in stat grids: tiny label above a large tabular number. */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+.stat-md .stat-value { font-size: 1.375rem; /* 22px */ }
+.stat-label {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.stat-unit  { font-size: var(--t-xs); color: var(--ink-soft); margin-left: 3px; }
+.stat-sub   { font-size: var(--t-xs); color: var(--ink-soft); }
+
+
+/* ── Card / panel — sharp rectangle with single-pixel border ──────── */
+.card {
+  border: 1px solid var(--line);
+  background: transparent;
+}
+.card.surface { background: var(--surface); }
+.card.inverse {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+
+/* ── Divider — labeled horizontal rule with leading dashes ───────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.divider .divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+.divider .divider-right { color: var(--ink-muted); }
+
+
+/* ── Inputs ───────────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 16px;             /* 16px prevents iOS Safari zoom-on-focus */
+  padding: 12px 12px;
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  font-variant-numeric: tabular-nums;
+}
+.input:focus { outline: none; border-color: var(--accent); }
+.input::placeholder { color: var(--ink-muted); }
+.input-center { text-align: center; }
+.input-lg     { font-size: var(--t-lg); padding: 14px 14px; }
+
+select.input {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a9489' stroke-width='1.4' stroke-linecap='square'><path d='M3 6 L8 11 L13 6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+  padding-right: 32px;
+}
+select.input option { background: var(--bg); color: var(--ink); }
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+
+/* Primary CTA — phosphor block, ALL CAPS, square. */
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-md);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  border-radius: 0;
+  min-height: 50px;
+}
+.btn-primary.center { justify-content: center; }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary:active   { filter: brightness(0.92); }
+
+/* Secondary — outlined, transparent. */
+.btn-secondary {
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-secondary:active { background: var(--line-soft); }
+.btn-secondary.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* Dashed "+ add" affordance */
+.btn-add {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 0;
+  min-height: 44px;
+}
+.btn-add:active { border-color: var(--accent); color: var(--accent); }
+
+/* 48×48 stepper button used inside the command card. */
+.btn-step {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.btn-step:active { background: var(--line-soft); }
+.btn-step.inverse {
+  color: var(--bg);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+.btn-step.inverse:active { background: rgba(255, 255, 255, 0.10); }
+
+/* Icon-only square — used for back/close. */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+.btn-icon:active { background: var(--line-soft); }
+.btn-icon.borderless { border-color: transparent; }
+
+
+/* ── Pills (small uppercase chips) ───────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 0;
+  white-space: nowrap;
+}
+.pill.soft   { color: var(--ink-soft); }
+.pill.filled { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.pill.good   { color: var(--good); border-color: var(--good); }
+.pill.danger { color: var(--danger); border-color: var(--danger); }
+.pill.toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pill.toggle.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+
+/* ── Bottom tab bar ───────────────────────────────────────────────── */
+.tab-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tab-bar-inner {
+  max-width: 30rem;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.tab {
+  padding: 10px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: var(--t-xs);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  border-right: 1px solid var(--line-soft);
+}
+.tab:last-child { border-right: none; }
+.tab svg { width: 18px; height: 18px; stroke: currentColor; display: block; }
+.tab.active { color: var(--accent); }
+.tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 6px; right: 6px;
+  height: 2px;
+  background: var(--accent);
+}
+.tab.primary { color: var(--accent); font-weight: 700; }
+.tab.primary svg { width: 22px; height: 22px; }
+.tab.primary.active::before { display: none; }
+.tab.primary.active svg { filter: drop-shadow(0 0 5px var(--accent)); }
+
+
+/* ── Top app bar (per screen) ─────────────────────────────────────── */
+.topbar {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px 10px;
+  background: var(--bg);
+  position: relative;
+  z-index: 2;
+}
+.topbar.with-meta { padding-top: 6px; }
+.topbar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 18px;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.topbar-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.topbar-sub {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+
+/* ── Screen body ──────────────────────────────────────────────────── */
+.body-pad   { padding: 12px 16px 0; }
+.section-mt { margin-top: 16px; }
+
+
+/* ── Switch (iOS-style toggle) — kept for settings ───────────────── */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch-track {
+  position: absolute; inset: 0;
+  background: var(--line);
+  border-radius: 999px;
+  transition: background 0.18s;
+}
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  background: var(--ink);
+  border-radius: 50%;
+  transition: transform 0.18s;
+}
+.switch input:checked + .switch-track { background: var(--accent); }
+.switch input:checked ~ .switch-thumb,
+.switch input:checked + .switch-track + .switch-thumb { transform: translateX(18px); }
+
+
+/* ── Modal sheet (bottom drawer style) ────────────────────────────── */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fade-in 0.16s ease-out;
+}
+.sheet {
+  width: 100%;
+  max-width: 30rem;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 14px 16px calc(env(safe-area-inset-bottom, 0) + 16px);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slide-up 0.18s ease-out;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 13px 13px, 13px 13px;
+}
+.sheet-handle {
+  width: 40px;
+  height: 3px;
+  background: var(--line);
+  margin: 0 auto 10px;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

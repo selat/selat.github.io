@@ -1,0 +1,836 @@
+/* ════════════════════════════════════════════════════════════════════
+   STYLES.CSS — App-specific layouts (loaded after theme.css)
+   ════════════════════════════════════════════════════════════════════
+   Composes the REP.LOG design tokens into the specific patterns for
+   each screen. Anything reusable across screens lives in theme.css.
+   ════════════════════════════════════════════════════════════════════ */
+
+
+/* ── Stat grid (boxed grid of .stat blocks) ────────────────────────
+   Used on Home / Recovery / Detail / Suggested. Cells get internal
+   borders only on right/bottom so adjacent cells share a single line. */
+.stat-grid {
+  border: 1px solid var(--line);
+  display: grid;
+}
+.stat-grid > .stat-cell {
+  padding: 10px 12px;
+}
+.stat-grid > .stat-cell + .stat-cell {
+  /* Default — overridden per orientation below */
+}
+.stat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.stat-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.stat-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.stat-grid.cols-2 > .stat-cell:nth-child(odd),
+.stat-grid.cols-3 > .stat-cell:not(:nth-child(3n)),
+.stat-grid.cols-4 > .stat-cell:not(:nth-child(4n)) {
+  border-right: 1px solid var(--line-soft);
+}
+/* When a 4-stat grid wraps to two rows, the first row needs a bottom border. */
+.stat-grid.cols-2.two-rows > .stat-cell:nth-child(-n+2) {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+
+/* ── Calendar (Home screen) ───────────────────────────────────────── */
+.cal-header {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 16px 10px;
+  background: var(--bg);
+  position: relative;
+  z-index: 2;
+}
+.cal-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  min-height: 26px;
+}
+.cal-nav-left { display: flex; align-items: center; gap: 4px; }
+.cal-nav-right { display: flex; align-items: center; gap: 10px; }
+.cal-arrow {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: var(--t-md);
+  padding: 4px 10px;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.cal-month-label {
+  font-size: var(--t-base);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  min-width: 92px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.cal-wk {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cal-toggle {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--t-xs);
+  padding: 6px 8px;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0;
+  min-height: 28px;
+}
+.cal-day-letters {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding-bottom: 4px;
+}
+.cal-day-letters span {
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  text-align: center;
+}
+.cal-week, .cal-month-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.cal-month-row.current-week { background: var(--line); }
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 4px;
+}
+.cal-day.compact { gap: 3px; padding: 4px 0; }
+.cal-day.dim { opacity: 0.28; }
+.cal-day-num {
+  font-size: var(--t-base);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+}
+.cal-day.compact .cal-day-num { font-size: var(--t-xs); }
+.cal-day.today .cal-day-num { color: var(--accent); font-weight: 700; }
+.cal-day.future .cal-day-num { color: var(--ink-muted); }
+.cal-day-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.cal-day.compact .cal-day-dot { width: 5px; height: 5px; }
+.cal-day-dot.session { background: var(--ink); }
+.cal-day-dot.today   { background: var(--accent); }
+.cal-day-dot.empty   { border: 1px solid var(--line-soft); }
+.cal-day.future .cal-day-dot.empty,
+.cal-day.dim .cal-day-dot.empty { border: none; }
+
+
+/* ── Today CTA (inverse hero card on Home) ────────────────────────── */
+.today-cta {
+  margin-top: 14px;
+  background: var(--ink);
+  color: var(--bg);
+  padding: 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.today-cta .eyebrow { color: rgba(10, 11, 10, 0.55); }
+.today-cta .row-baseline { gap: 1rem; }
+.today-cta-title {
+  font-size: var(--t-lg);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.today-cta-start {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  background: var(--accent);
+  color: var(--accent-fg);
+  padding: 8px 12px;
+  text-transform: uppercase;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.today-cta-why {
+  font-size: var(--t-xs);
+  color: rgba(10, 11, 10, 0.6);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+.today-cta-why .good   { color: var(--good);   font-weight: 700; }
+.today-cta-why .danger { color: var(--danger); font-weight: 700; }
+.today-cta.empty {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 16px;
+}
+
+
+/* ── Record screen autogen hero (similar inverse card) ────────────── */
+.autogen-hero {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.autogen-hero .eyebrow { color: rgba(10, 11, 10, 0.55); }
+.autogen-title {
+  font-size: var(--t-xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  margin: 0;
+}
+.autogen-meta {
+  display: flex;
+  gap: 8px;
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(10, 11, 10, 0.55);
+}
+.autogen-meta .sep { color: rgba(10, 11, 10, 0.3); }
+.autogen-rationale {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+}
+.autogen-rationale .pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.autogen-rationale .lbl {
+  color: rgba(10, 11, 10, 0.6);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+
+/* ── Session row (shared between Home / History) ──────────────────── */
+.session-row {
+  padding: 12px 0 14px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
+  color: var(--ink);
+  cursor: pointer;
+}
+.session-row:active { background: var(--line-soft); }
+.session-row-date {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.session-row-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.session-row-muscles {
+  font-size: var(--t-md);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+}
+.session-row-chevron {
+  font-size: var(--t-md);
+  color: var(--ink-muted);
+  line-height: 1.25;
+}
+.session-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.session-row-meta .sep { color: var(--line-soft); }
+.session-row-meta .pr { color: var(--accent); font-weight: 700; }
+.session-row-marks {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: var(--t-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+}
+.session-row-marks .pr { color: var(--accent); }
+
+
+/* ── Library list ─────────────────────────────────────────────────── */
+.lib-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  font-size: var(--t-sm);
+  min-height: 44px;
+}
+.lib-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  outline: none;
+  padding: 0;
+  min-width: 0;
+}
+.lib-search input::placeholder { color: var(--ink-muted); }
+.lib-search-icon { font-size: var(--t-sm); color: var(--ink-soft); }
+.lib-filters {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.lib-list { display: flex; flex-direction: column; }
+.lib-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
+  color: var(--ink);
+  cursor: pointer;
+  min-height: 56px;
+}
+.lib-row:active { background: var(--line-soft); }
+.lib-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.lib-row-name {
+  font-size: var(--t-base);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+}
+.lib-row-name .num {
+  color: var(--ink-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+.lib-row-e1rm {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.lib-row-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.lib-row-last {
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin-left: auto;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.lib-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+
+/* ── Active session: sets table + command card ────────────────────── */
+.sets-table { border: 1px solid var(--line); }
+.sets-head, .sets-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 32px;
+  align-items: center;
+  padding: 8px 12px;
+}
+.sets-head {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-xs);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.sets-row {
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-base);
+  color: var(--ink);
+  min-height: 44px;
+}
+.sets-row:last-child { border-bottom: none; }
+.sets-row .num {
+  font-size: var(--t-xs);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sets-row .check { font-size: var(--t-xs); color: var(--ink); }
+.sets-row.upcoming { color: var(--ink-muted); }
+.sets-row.upcoming .num { color: var(--ink-muted); font-weight: 500; }
+.sets-row.upcoming .check { color: var(--ink-muted); }
+.sets-row.warmup .num { color: var(--ink-soft); font-weight: 600; }
+.sets-row.warmup { color: var(--ink-soft); }
+
+/* The "command card" — current set inverted, expanded with steppers */
+.command-card {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 12px 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.command-card:last-child { border-bottom: none; }
+.command-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.command-card-head .target { opacity: 0.55; }
+.command-card-steppers {
+  display: flex;
+  gap: 12px;
+}
+.command-card-stepper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.command-card-stepper-label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  font-weight: 700;
+}
+.command-card-stepper-row {
+  display: flex;
+  align-items: stretch;
+}
+.command-card-stepper-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-xl);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  border-top: 1px solid rgba(255, 255, 255, 0.30);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30);
+  background: transparent;
+  color: var(--bg);
+  border-left: none;
+  border-right: none;
+  font-family: var(--font-mono);
+  padding: 0;
+  min-height: 48px;
+}
+
+
+/* ── Session top banner (REST timer or DONE) ─────────────────────── */
+.session-top {
+  margin-top: 6px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 50px;
+}
+.session-top.rest { background: var(--ink); color: var(--bg); }
+.session-top.done { background: var(--accent); color: var(--accent-fg); }
+.session-top-label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.session-top-value {
+  font-size: var(--t-xl);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.session-top-aside {
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+
+/* ── Templates list (Record screen) ──────────────────────────────── */
+.template-row {
+  padding: 12px 0 13px;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
+  color: var(--ink);
+  min-height: 64px;
+}
+.template-row:active { background: var(--line-soft); }
+.template-row-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.template-row-name .name {
+  font-size: var(--t-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.template-row-name .pinned {
+  font-size: var(--t-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.template-row-muscles {
+  font-size: var(--t-sm);
+  color: var(--ink);
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+.template-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.template-row-meta .sep { color: var(--line-soft); }
+
+
+/* ── Workout plan list (current workout / past session detail) ──── */
+.plan-row {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 24px 1fr 14px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  min-height: 56px;
+}
+.plan-row:active { background: var(--line-soft); }
+.plan-row.current {
+  background: var(--surface);
+  border-left-color: var(--accent);
+}
+.plan-row-marker {
+  font-size: var(--t-md);
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+}
+.plan-row.current .plan-row-marker { color: var(--accent); }
+.plan-row.upcoming .plan-row-marker { color: var(--ink-muted); }
+.plan-row-name {
+  font-size: var(--t-md);
+  font-weight: 700;
+  color: var(--ink);
+  /* Wrap the exercise name — fix for the truncation bug in the design review. */
+  line-height: 1.2;
+}
+.plan-row.upcoming .plan-row-name { color: var(--ink-soft); }
+.plan-row-name .idx {
+  font-size: var(--t-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.plan-row-result {
+  font-size: var(--t-sm);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.plan-row.upcoming .plan-row-result { color: var(--ink-soft); }
+.plan-row.current  .plan-row-result { font-weight: 700; }
+.plan-row-chev {
+  font-size: var(--t-md);
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+
+/* ── Progress strip (current workout) ─────────────────────────────── */
+.progress-strip {
+  height: 3px;
+  background: var(--line-soft);
+  position: relative;
+  margin-top: 8px;
+}
+.progress-strip-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--accent);
+}
+.progress-strip-tick {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--bg);
+}
+
+
+/* ── Recovery body view ───────────────────────────────────────────── */
+.body-grid {
+  border: 1px solid var(--line);
+  padding: 6px 8px 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface);
+}
+.body-grid-side .label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  display: block;
+}
+.body-grid-side .diagram { height: 240px; }
+.body-grid-side + .body-grid-side { border-left: 1px dashed var(--line-soft); }
+.recovery-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.recovery-legend span { display: flex; align-items: center; gap: 4px; }
+.recovery-legend .swatch { width: 10px; height: 10px; display: inline-block; }
+.recovery-bars { display: flex; flex-direction: column; gap: 6px; }
+.recovery-bar-row {
+  display: grid;
+  grid-template-columns: 84px 1fr 96px;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--t-xs);
+}
+.recovery-bar-row .lbl {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.recovery-bar {
+  height: 10px;
+  background: var(--line-soft);
+  position: relative;
+}
+.recovery-bar-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+}
+.recovery-bar-row .pct {
+  text-align: right;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+
+/* ── Exercise detail: chart card ─────────────────────────────────── */
+.chart-card {
+  position: relative;
+  border: 1px solid var(--line);
+  padding: 8px 12px 24px 36px;
+  background: var(--surface);
+}
+.chart-card .now-callout {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: var(--t-xs);
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.chart-card .y-axis {
+  position: absolute;
+  left: 4px; top: 28px; bottom: 28px;
+  width: 26px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.chart-card .x-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+
+/* ── Detail history rows ─────────────────────────────────────────── */
+.detail-log-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-xs);
+  min-height: 44px;
+}
+.detail-log-row:last-child { border-bottom: none; }
+.detail-log-row .date {
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.detail-log-row .sets { font-weight: 700; }
+.detail-log-row .e1rm {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.detail-log-row .pr {
+  font-weight: 800;
+  color: var(--accent-fg);
+  background: var(--accent);
+  padding: 3px 6px;
+  letter-spacing: 0.08em;
+}
+.detail-log-row .pr.empty { background: transparent; color: var(--ink-muted); font-weight: 400; }
+
+
+/* ── Settings sheet ──────────────────────────────────────────────── */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  min-height: 48px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-row-label strong {
+  font-weight: 700;
+  font-size: var(--t-base);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.settings-row-label small {
+  color: var(--ink-soft);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+}
+.settings-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

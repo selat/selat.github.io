@@ -1,0 +1,302 @@
+/* HISTORY screen — pure timeline list of past sessions grouped by
+   month with sticky headers. Aggregate strip on top shows last-4-weeks
+   sessions/volume/PR.
+
+   Past session detail: full-screen render reached by `#session/<id>`,
+   shows split tag + completed date + duration, a per-exercise plan-row
+   list, and REPEAT / DELETE actions. Mirrors the workout overview but
+   in read-only mode. */
+
+import { listSessions, getSession, deleteSession, exerciseLabel, startSession } from '../data/sessions.js';
+import { sessionMusclesLabel, sessionSplitTag, sessionVolume, sessionDurationSec, sessionPRCount, lastNWeeks } from '../data/derived.js';
+import { el, html, divider, formatWeight, formatTrainTime, formatShortDate, formatMonth, formatDurationPad } from './shared.js';
+import { go } from '../app.js';
+
+
+export function renderHistory(container) {
+  container.replaceChildren();
+
+  // Topbar
+  const tb = el('div', 'topbar');
+  const main = el('div', 'topbar-main');
+  main.append(html('h1', 'title', 'HISTORY'));
+  main.append(html('span', 'topbar-sub', 'PAST SESSIONS'));
+  tb.append(main);
+  container.append(tb);
+
+  const sessions = listSessions().filter((s) => s.endedAt != null);
+
+  // Aggregate strip — last 4 weeks
+  container.append(aggregateStrip());
+
+  if (sessions.length === 0) {
+    const empty = el('div', 'lib-empty');
+    empty.style.padding = '4rem 1rem';
+    empty.textContent = 'NO SESSIONS YET';
+    container.append(empty);
+    return;
+  }
+
+  // Group by month
+  const grouped = [];
+  for (const s of sessions) {
+    const m = formatMonth(s.startedAt);
+    const last = grouped[grouped.length - 1];
+    if (last && last.month === m) last.items.push(s);
+    else grouped.push({ month: m, items: [s] });
+  }
+
+  const list = el('div');
+  list.style.flex = '1';
+  list.style.overflow = 'auto';
+
+  grouped.forEach((g, gi) => {
+    const monthHeader = el('div');
+    monthHeader.style.position = 'sticky';
+    monthHeader.style.top = '0';
+    monthHeader.style.zIndex = '1';
+    monthHeader.style.padding = '8px 16px';
+    monthHeader.style.background = 'var(--bg)';
+    monthHeader.style.borderTop = gi > 0 ? '1px solid var(--line)' : 'none';
+    monthHeader.style.borderBottom = '1px solid var(--line-soft)';
+    monthHeader.style.display = 'flex';
+    monthHeader.style.justifyContent = 'space-between';
+    monthHeader.style.fontSize = 'var(--t-xs)';
+    monthHeader.style.color = 'var(--ink-soft)';
+    monthHeader.style.letterSpacing = '0.14em';
+    monthHeader.style.textTransform = 'uppercase';
+    monthHeader.style.fontWeight = '700';
+    monthHeader.append(html('span', null, `── ${g.month}`));
+    monthHeader.append(html('span', 'dim', `${g.items.length} SESSIONS`));
+    list.append(monthHeader);
+
+    const wrap = el('div');
+    wrap.style.padding = '0 16px';
+    for (const s of g.items) wrap.append(sessionRow(s));
+    list.append(wrap);
+  });
+
+  container.append(list);
+}
+
+
+function aggregateStrip() {
+  const weeks = lastNWeeks(4);
+  let sessions = 0, vol = 0, prs = 0;
+  for (const w of weeks) { sessions += w.sessions; vol += w.volume; prs += w.prs; }
+
+  const wrap = el('div');
+  wrap.style.padding = '12px 16px 14px';
+  wrap.style.borderBottom = '1px solid var(--line)';
+  wrap.append(html('div', 'eyebrow', 'LAST 4 WEEKS'));
+
+  const row = el('div');
+  row.style.display = 'flex';
+  row.style.alignItems = 'baseline';
+  row.style.gap = '14px';
+  row.style.marginTop = '6px';
+  row.style.fontVariantNumeric = 'tabular-nums';
+
+  row.append(aggCell(String(sessions), 'SESSIONS', 'var(--ink)'));
+  row.append(html('span', 'dim', '│'));
+  row.append(aggCell(formatKilo(vol), 'VOLUME · KG', 'var(--ink)'));
+  row.append(html('span', 'dim', '│'));
+  row.append(aggCell(String(prs), 'PR', prs > 0 ? 'var(--accent)' : 'var(--ink)'));
+
+  wrap.append(row);
+  return wrap;
+}
+
+function aggCell(value, label, color) {
+  const c = el('div');
+  c.style.display = 'flex';
+  c.style.alignItems = 'baseline';
+  c.style.gap = '5px';
+  const v = el('span', 'stat-value');
+  v.style.color = color;
+  v.textContent = value;
+  c.append(v);
+  c.append(html('span', 'eyebrow', label));
+  return c;
+}
+
+function formatKilo(v) {
+  if (v >= 10000) return (v / 1000).toFixed(1) + 'K';
+  if (v >= 1000)  return (v / 1000).toFixed(2) + 'K';
+  return Math.round(v).toLocaleString();
+}
+
+
+/* ── Session row (also used on Home, duplicated for variation here) ── */
+
+function sessionRow(s) {
+  const row = el('button', 'session-row');
+  row.type = 'button';
+  row.append(el('div', 'session-row-date', formatShortDate(s.startedAt)));
+  const main = el('div', 'session-row-main');
+  main.append(el('span', 'session-row-muscles', sessionMusclesLabel(s)));
+  main.append(el('span', 'session-row-chevron', '›'));
+  row.append(main);
+  const meta = el('div', 'session-row-meta');
+  meta.append(el('span', null, formatWeight(sessionVolume(s))));
+  meta.append(el('span', 'sep', '·'));
+  meta.append(el('span', null, formatTrainTime(sessionDurationSec(s))));
+  const prs = sessionPRCount(s);
+  if (prs > 0) {
+    meta.append(el('span', 'sep', '·'));
+    meta.append(el('span', 'pr', `+${prs} PR`));
+  }
+  row.append(meta);
+  row.addEventListener('click', () => go('session/' + s.id));
+  return row;
+}
+
+
+/* ── Past session detail (sub-route #session/<id>) ──────────────── */
+
+export function renderPastSession(container, id) {
+  container.replaceChildren();
+  const session = getSession(id);
+  if (!session) { go('history'); return; }
+
+  // Top bar — close + workout name + completed date + duration
+  const tb = el('div', 'topbar');
+  tb.style.display = 'flex';
+  tb.style.alignItems = 'center';
+  tb.style.gap = '12px';
+  tb.style.padding = '8px 14px 10px';
+
+  const close = el('button', 'btn-icon');
+  close.textContent = '×';
+  close.style.fontSize = 'var(--t-lg)';
+  close.setAttribute('aria-label', 'back to history');
+  close.addEventListener('click', () => go('history'));
+  tb.append(close);
+
+  const titleBox = el('div');
+  titleBox.style.flex = '1';
+  titleBox.style.lineHeight = '1.15';
+  const completedLabel = 'COMPLETED · ' + new Date(session.startedAt).toLocaleDateString([], {
+    weekday: 'short', day: 'numeric', month: 'short',
+  }).toUpperCase();
+  titleBox.append(html('div', 'eyebrow', completedLabel));
+  titleBox.append(html('div', 'title', sessionSplitTag(session)));
+  tb.append(titleBox);
+
+  const right = el('div');
+  right.style.textAlign = 'right';
+  right.style.lineHeight = '1.15';
+  right.append(html('div', 'eyebrow', 'DURATION'));
+  const dur = el('div', 'tnum');
+  dur.style.fontSize = 'var(--t-md)';
+  dur.style.fontWeight = '700';
+  dur.textContent = formatDurationPad(sessionDurationSec(session));
+  right.append(dur);
+  tb.append(right);
+  container.append(tb);
+
+  // Progress strip — all complete
+  const total = session.entries.length;
+  const prog = el('div');
+  prog.style.padding = '12px 16px 10px';
+  const lbl = el('div', 'row-baseline');
+  lbl.style.fontSize = 'var(--t-xs)';
+  lbl.style.letterSpacing = '0.1em';
+  lbl.style.color = 'var(--ink-soft)';
+  lbl.style.textTransform = 'uppercase';
+  lbl.append(html('span', null, `<strong style="color:var(--ink);font-weight:700">${total} / ${total} COMPLETE</strong>`));
+  const prs = sessionPRCount(session);
+  lbl.append(html('span', null,
+    `${formatWeight(sessionVolume(session))}` + (prs ? ` · <span style="color:var(--accent);font-weight:700">+${prs} PR</span>` : '')));
+  prog.append(lbl);
+  const bar = el('div', 'progress-strip');
+  const fill = el('div', 'progress-strip-fill');
+  fill.style.width = '100%';
+  bar.append(fill);
+  prog.append(bar);
+  container.append(prog);
+
+  container.append(divider('PLAN'));
+
+  // Per-exercise rows
+  const planList = el('div');
+  planList.style.flex = '1';
+  session.entries.forEach((entry, idx) => {
+    planList.append(pastEntryRow(entry, idx));
+  });
+  container.append(planList);
+
+  // Repeat / Delete footer
+  const footer = el('div');
+  footer.style.padding = '10px 16px 12px';
+  footer.style.borderTop = '1px solid var(--line)';
+  footer.style.background = 'var(--bg)';
+  footer.style.display = 'flex';
+  footer.style.flexDirection = 'column';
+  footer.style.gap = '8px';
+
+  const repeat = el('button', 'btn-primary');
+  repeat.innerHTML = '<span>↻ REPEAT WORKOUT</span><span>→</span>';
+  repeat.addEventListener('click', () => {
+    const exerciseIds = session.entries.map((e) => e.exerciseId);
+    startSession(exerciseIds);
+    go('record');
+  });
+  footer.append(repeat);
+
+  const del = el('button');
+  del.style.width = '100%';
+  del.style.background = 'transparent';
+  del.style.border = '1px solid var(--danger)';
+  del.style.color = 'var(--danger)';
+  del.style.fontFamily = 'inherit';
+  del.style.fontSize = 'var(--t-xs)';
+  del.style.fontWeight = '700';
+  del.style.letterSpacing = '0.14em';
+  del.style.textTransform = 'uppercase';
+  del.style.padding = '12px';
+  del.style.cursor = 'pointer';
+  del.style.minHeight = '44px';
+  del.innerHTML = '⌫ DELETE WORKOUT';
+  del.addEventListener('click', () => {
+    if (!confirm('Delete this session permanently?')) return;
+    deleteSession(session.id);
+    go('history');
+  });
+  footer.append(del);
+
+  container.append(footer);
+}
+
+function pastEntryRow(entry, idx) {
+  const working = entry.sets.filter((s) => !s.isWarmup);
+  const row = el('div', 'plan-row done');
+  const marker = el('span', 'plan-row-marker');
+  marker.textContent = '✓';
+  row.append(marker);
+
+  const text = el('div');
+  text.style.minWidth = '0';
+  text.append(html('div', null,
+    `<span class="idx" style="font-size:var(--t-xs);color:var(--ink-muted);font-weight:500;letter-spacing:0.08em;margin-right:6px;">${String(idx + 1).padStart(2, '0')}</span><span class="bold" style="font-size: var(--t-md);">${exerciseLabel(entry.exerciseId)}</span>`));
+  text.append(html('div', 'plan-row-result', formatResult(working)));
+  row.append(text);
+
+  row.append(html('span', 'plan-row-chev', '›'));
+  return row;
+}
+
+function formatResult(working) {
+  if (working.length === 0) return '—';
+  // Timed sets: "3 × 60s" or "3 sets · top 75s".
+  if (working[0].seconds != null) {
+    const same = working.every((s) => s.seconds === working[0].seconds);
+    if (same) return `${working.length} × ${working[0].seconds}s`;
+    const longest = working.reduce((a, b) => (b.seconds > a.seconds ? b : a), working[0]);
+    return `${working.length} sets · top ${longest.seconds}s`;
+  }
+  const same = working.every((s) => s.weight === working[0].weight && s.reps === working[0].reps);
+  if (same) return `${working.length} × ${working[0].reps} @ ${working[0].weight}kg`;
+  const top = working.reduce((a, b) => (b.weight > a.weight ? b : a), working[0]);
+  return `${working.length} sets · top ${top.weight}×${top.reps}`;
+}
