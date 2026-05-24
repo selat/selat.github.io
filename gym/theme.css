@@ -297,6 +297,7 @@ input[type=number] { -moz-appearance: textfield; }
   color: var(--danger);
   border-color: var(--danger);
 }
+.btn-secondary.block { width: 100%; display: flex; }
 
 /* Dashed "+ add" affordance */
 .btn-add {
@@ -359,6 +360,7 @@ input[type=number] { -moz-appearance: textfield; }
 }
 .btn-icon:active { background: var(--line-soft); }
 .btn-icon.borderless { border-color: transparent; }
+.btn-icon.lg { font-size: var(--t-lg); }
 
 
 /* ── Pills (small uppercase chips) ───────────────────────────────── */

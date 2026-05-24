@@ -51,21 +51,7 @@ export function renderHistory(container) {
   list.style.overflow = 'auto';
 
   grouped.forEach((g, gi) => {
-    const monthHeader = el('div');
-    monthHeader.style.position = 'sticky';
-    monthHeader.style.top = '0';
-    monthHeader.style.zIndex = '1';
-    monthHeader.style.padding = '8px 16px';
-    monthHeader.style.background = 'var(--bg)';
-    monthHeader.style.borderTop = gi > 0 ? '1px solid var(--line)' : 'none';
-    monthHeader.style.borderBottom = '1px solid var(--line-soft)';
-    monthHeader.style.display = 'flex';
-    monthHeader.style.justifyContent = 'space-between';
-    monthHeader.style.fontSize = 'var(--t-xs)';
-    monthHeader.style.color = 'var(--ink-soft)';
-    monthHeader.style.letterSpacing = '0.14em';
-    monthHeader.style.textTransform = 'uppercase';
-    monthHeader.style.fontWeight = '700';
+    const monthHeader = el('div', 'history-month-header' + (gi === 0 ? ' first' : ''));
     monthHeader.append(html('span', null, `── ${g.month}`));
     monthHeader.append(html('span', 'dim', `${g.items.length} SESSIONS`));
     list.append(monthHeader);
@@ -150,22 +136,15 @@ export function renderPastSession(container, id) {
   if (!session) { go('history'); return; }
 
   // Top bar — close + workout name + completed date + duration
-  const tb = el('div', 'topbar');
-  tb.style.display = 'flex';
-  tb.style.alignItems = 'center';
-  tb.style.gap = '12px';
-  tb.style.padding = '8px 14px 10px';
+  const tb = el('div', 'topbar detail-topbar');
 
-  const close = el('button', 'btn-icon');
+  const close = el('button', 'btn-icon lg');
   close.textContent = '×';
-  close.style.fontSize = 'var(--t-lg)';
   close.setAttribute('aria-label', 'back to history');
   close.addEventListener('click', () => go('history'));
   tb.append(close);
 
-  const titleBox = el('div');
-  titleBox.style.flex = '1';
-  titleBox.style.lineHeight = '1.15';
+  const titleBox = el('div', 'detail-topbar-title');
   const completedLabel = 'COMPLETED · ' + new Date(session.startedAt).toLocaleDateString([], {
     weekday: 'short', day: 'numeric', month: 'short',
   }).toUpperCase();
@@ -173,13 +152,9 @@ export function renderPastSession(container, id) {
   titleBox.append(html('div', 'title', sessionSplitTag(session)));
   tb.append(titleBox);
 
-  const right = el('div');
-  right.style.textAlign = 'right';
-  right.style.lineHeight = '1.15';
+  const right = el('div', 'detail-topbar-right');
   right.append(html('div', 'eyebrow', 'DURATION'));
-  const dur = el('div', 'tnum');
-  dur.style.fontSize = 'var(--t-md)';
-  dur.style.fontWeight = '700';
+  const dur = el('div', 'tnum detail-topbar-value');
   dur.textContent = formatDurationPad(sessionDurationSec(session));
   right.append(dur);
   tb.append(right);
@@ -187,17 +162,12 @@ export function renderPastSession(container, id) {
 
   // Progress strip — all complete
   const total = session.entries.length;
-  const prog = el('div');
-  prog.style.padding = '12px 16px 10px';
-  const lbl = el('div', 'row-baseline');
-  lbl.style.fontSize = 'var(--t-xs)';
-  lbl.style.letterSpacing = '0.1em';
-  lbl.style.color = 'var(--ink-soft)';
-  lbl.style.textTransform = 'uppercase';
-  lbl.append(html('span', null, `<strong style="color:var(--ink);font-weight:700">${total} / ${total} COMPLETE</strong>`));
+  const prog = el('div', 'detail-progress');
+  const lbl = el('div', 'row-baseline detail-progress-label');
+  lbl.append(html('span', null, `<strong>${total} / ${total} COMPLETE</strong>`));
   const prs = sessionPRCount(session);
   lbl.append(html('span', null,
-    `${formatWeight(sessionVolume(session))}` + (prs ? ` · <span style="color:var(--accent);font-weight:700">+${prs} PR</span>` : '')));
+    `${formatWeight(sessionVolume(session))}` + (prs ? ` · <span class="pr">+${prs} PR</span>` : '')));
   prog.append(lbl);
   const bar = el('div', 'progress-strip');
   const fill = el('div', 'progress-strip-fill');
@@ -217,13 +187,7 @@ export function renderPastSession(container, id) {
   container.append(planList);
 
   // Repeat / Delete footer
-  const footer = el('div');
-  footer.style.padding = '10px 16px 12px';
-  footer.style.borderTop = '1px solid var(--line)';
-  footer.style.background = 'var(--bg)';
-  footer.style.display = 'flex';
-  footer.style.flexDirection = 'column';
-  footer.style.gap = '8px';
+  const footer = el('div', 'detail-footer');
 
   const repeat = el('button', 'btn-primary');
   repeat.innerHTML = '<span>↻ REPEAT WORKOUT</span><span>→</span>';
@@ -234,20 +198,8 @@ export function renderPastSession(container, id) {
   });
   footer.append(repeat);
 
-  const del = el('button');
-  del.style.width = '100%';
-  del.style.background = 'transparent';
-  del.style.border = '1px solid var(--danger)';
-  del.style.color = 'var(--danger)';
-  del.style.fontFamily = 'inherit';
-  del.style.fontSize = 'var(--t-xs)';
-  del.style.fontWeight = '700';
-  del.style.letterSpacing = '0.14em';
-  del.style.textTransform = 'uppercase';
-  del.style.padding = '12px';
-  del.style.cursor = 'pointer';
-  del.style.minHeight = '44px';
-  del.innerHTML = '⌫ DELETE WORKOUT';
+  const del = el('button', 'btn-secondary danger block');
+  del.textContent = '⌫ DELETE WORKOUT';
   del.addEventListener('click', () => {
     if (!confirm('Delete this session permanently?')) return;
     deleteSession(session.id);
@@ -265,10 +217,8 @@ function pastEntryRow(entry, idx) {
   marker.textContent = '✓';
   row.append(marker);
 
-  const text = el('div');
-  text.style.minWidth = '0';
-  text.append(html('span', 'bold', exerciseLabel(entry.exerciseId)));
-  text.lastChild.style.fontSize = 'var(--t-md)';
+  const text = el('div', 'plan-row-text');
+  text.append(html('span', 'plan-row-name', exerciseLabel(entry.exerciseId)));
   text.append(html('div', 'plan-row-result', formatResult(working)));
   row.append(text);
 

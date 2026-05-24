@@ -18,7 +18,7 @@
    the most recent working set from history, or all-zeros. Pre-fills
    weight/reps so users only need to nudge between sets. */
 
-import { getActiveSession, startSession, endActiveSession, abandonActiveSession,
+import { getActiveSession, startSession,
          addEntry, removeEntry, addSet, updateSet, deleteSet,
          startRest, clearRest, getRestState, exerciseLabel,
          startHold, pauseHold, resumeHold, endHoldWork, endHoldRest, clearHold,
@@ -106,12 +106,6 @@ export function renderSession(container) {
     body.append(setsTable(session, entry));
     body.append(primaryAction(session, entry));
   }
-
-  // Add-exercise affordance
-  body.append(addExerciseBtn());
-
-  // Footer: abandon / finish
-  body.append(footerActions(session));
 
   container.append(body);
   startRestTicker();
@@ -391,7 +385,38 @@ function setsTable(session, entry) {
 
   // Command card for next set
   wrap.append(commandCard(entry));
+
+  // Upcoming planned-but-not-yet-logged working sets. The command card
+  // already occupies one slot (warmup or working); show the remainder
+  // beneath it, prefilled with the same weight/reps so the table reads
+  // like a single continuous plan.
+  const plannedWorking = plannedWorkingSetCount(entry.exerciseId);
+  const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
+  const upcomingCount = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
+  for (let i = 0; i < upcomingCount; i++) {
+    const setNum = workingDone + (draftIsWarmup ? 1 : 2) + i;
+    const row = el('div', 'sets-row upcoming');
+    row.append(el('span', 'num', String(setNum)));
+    row.append(el('span', null, formatNumber(draftWeight) + (draftPerSide ? ' ×2' : '')));
+    row.append(el('span', null, String(draftReps)));
+    row.append(el('span', 'check', '○'));
+    wrap.append(row);
+  }
   return wrap;
+}
+
+function plannedWorkingSetCount(exerciseId) {
+  const db = getDb();
+  const activeId = db.activeSessionId;
+  const past = db.sessions.filter((s) => s.id !== activeId);
+  for (const s of past.sort((a, b) => b.startedAt - a.startedAt)) {
+    for (const e of s.entries) {
+      if (e.exerciseId !== exerciseId) continue;
+      const cnt = e.sets.filter((set) => !set.isWarmup).length;
+      if (cnt > 0) return cnt;
+    }
+  }
+  return DEFAULT_WORKING_SETS;
 }
 
 function warmupIndex(entry, atIndex) {
@@ -549,7 +574,8 @@ function primaryAction(session, entry) {
   });
   wrap.append(btn);
 
-  // Secondary: advance to next exercise (only after at least one working set).
+  // Secondary: advance to next exercise, or — on the last exercise once at
+  // least one working set is logged — jump to the workout overview to review.
   if (!isLast) {
     const nextBtn = el('button', 'btn-secondary');
     nextBtn.style.width = '100%';
@@ -561,8 +587,19 @@ function primaryAction(session, entry) {
       refreshCard();
     });
     wrap.append(nextBtn);
+  } else if (entryDone(entry)) {
+    const reviewBtn = el('button', 'btn-secondary');
+    reviewBtn.style.width = '100%';
+    reviewBtn.style.marginTop = '6px';
+    reviewBtn.textContent = 'REVIEW WORKOUT →';
+    reviewBtn.addEventListener('click', () => go('workout'));
+    wrap.append(reviewBtn);
   }
   return wrap;
+}
+
+function entryDone(entry) {
+  return entry.sets.some((s) => !s.isWarmup);
 }
 
 function addExerciseBtn() {
@@ -578,36 +615,6 @@ function addExerciseBtn() {
   }));
   return btn;
 }
-
-function footerActions(session) {
-  const wrap = el('div', 'section-mt');
-  wrap.style.marginTop = '16px';
-  wrap.style.display = 'flex';
-  wrap.style.gap = '6px';
-  const abandon = el('button', 'btn-secondary danger');
-  abandon.style.flex = '1';
-  abandon.textContent = 'ABANDON';
-  abandon.addEventListener('click', () => {
-    if (session.entries.some((e) => e.sets.length > 0)) {
-      if (!confirm('Abandon this session? Logged sets will be discarded.')) return;
-    }
-    abandonActiveSession();
-    resetDraft();
-  });
-  wrap.append(abandon);
-  const finish = el('button', 'btn-primary');
-  finish.style.flex = '2';
-  finish.innerHTML = '<span>FINISH WORKOUT</span><span>→</span>';
-  finish.addEventListener('click', () => {
-    if (!confirm('Finish this workout? You can review it in History.')) return;
-    endActiveSession();
-    resetDraft();
-    go('home');
-  });
-  wrap.append(finish);
-  return wrap;
-}
-
 
 /* ── Empty state ─────────────────────────────────────────────────── */
 
@@ -985,18 +992,20 @@ function timedAction(entry, hold, isDone, targetSec, restSec) {
   wrap.style.gap = '6px';
 
   if (isDone) {
+    const session = getActiveSession();
+    const isLast = session && currentEntryIdx >= session.entries.length - 1;
     const next = el('button', 'btn-primary');
-    next.innerHTML = '<span>NEXT EXERCISE</span><span>→</span>';
-    next.addEventListener('click', () => {
-      // Same nav behaviour as the reps branch's NEXT EXERCISE.
-      const session = getActiveSession();
-      if (!session) return;
-      if (currentEntryIdx < session.entries.length - 1) {
+    if (isLast) {
+      next.innerHTML = '<span>REVIEW WORKOUT</span><span>→</span>';
+      next.addEventListener('click', () => go('workout'));
+    } else {
+      next.innerHTML = '<span>NEXT EXERCISE</span><span>→</span>';
+      next.addEventListener('click', () => {
         currentEntryIdx++;
         resetDraft();
         timedDraft.entryIndex = null;
-      }
-    });
+      });
+    }
     wrap.append(next);
     return wrap;
   }

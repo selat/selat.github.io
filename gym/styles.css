@@ -644,6 +644,7 @@
   line-height: 1.2;
 }
 .plan-row.upcoming .plan-row-name { color: var(--ink-soft); }
+.plan-row-text { min-width: 0; }
 .plan-row-name .idx {
   font-size: var(--t-xs);
   color: var(--ink-muted);
@@ -689,6 +690,66 @@
 }
 
 
+/* ── Detail-screen scaffolding (current workout + past session) ──── */
+.detail-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 10px;
+}
+.detail-topbar-title {
+  flex: 1;
+  line-height: 1.15;
+}
+.detail-topbar-right {
+  text-align: right;
+  line-height: 1.15;
+}
+.detail-topbar-value {
+  font-size: var(--t-md);
+  font-weight: 700;
+}
+.detail-progress {
+  padding: 12px 16px 10px;
+}
+.detail-progress-label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.detail-progress-label strong { color: var(--ink); font-weight: 700; }
+.detail-progress-label .pr { color: var(--accent); font-weight: 700; }
+.detail-footer {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+/* ── History month sticky header ─────────────────────────────────── */
+.history-month-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.history-month-header.first { border-top: none; }
+
+
 /* ── Recovery body view ───────────────────────────────────────────── */
 .body-grid {
   border: 1px solid var(--line);
@@ -710,16 +771,22 @@
 .body-grid-side + .body-grid-side { border-left: 1px dashed var(--line-soft); }
 .recovery-legend {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 6px;
+  gap: 10px;
+  margin-top: 8px;
   font-size: var(--t-xs);
   letter-spacing: 0.08em;
   color: var(--ink-soft);
   text-transform: uppercase;
 }
-.recovery-legend span { display: flex; align-items: center; gap: 4px; }
-.recovery-legend .swatch { width: 10px; height: 10px; display: inline-block; }
+.recovery-legend .lbl { font-weight: 700; }
+.recovery-legend .gradient-bar {
+  flex: 1;
+  height: 6px;
+  background: linear-gradient(to right,
+    oklch(0.55 0 25),
+    oklch(0.63 0.22 25));
+}
 .recovery-bars { display: flex; flex-direction: column; gap: 6px; }
 .recovery-bar-row {
   display: grid;

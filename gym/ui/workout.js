@@ -4,7 +4,7 @@
    session view. Includes a + ADD EXERCISE entry and a FINISH WORKOUT
    primary action at the bottom. */
 
-import { getActiveSession, endActiveSession, exerciseLabel } from '../data/sessions.js';
+import { getActiveSession, endActiveSession, abandonActiveSession, exerciseLabel } from '../data/sessions.js';
 import { sessionSplitTag } from '../data/derived.js';
 import { go } from '../app.js';
 import { el, html, divider, formatDurationPad } from './shared.js';
@@ -17,33 +17,22 @@ export function renderWorkout(container) {
   if (!session) { go('record'); return; }
 
   // Top bar — close + workout name + elapsed
-  const tb = el('div', 'topbar');
-  tb.style.display = 'flex';
-  tb.style.alignItems = 'center';
-  tb.style.gap = '12px';
-  tb.style.padding = '8px 14px 10px';
+  const tb = el('div', 'topbar detail-topbar');
 
-  const close = el('button', 'btn-icon');
+  const close = el('button', 'btn-icon lg');
   close.textContent = '×';
-  close.style.fontSize = 'var(--t-lg)';
   close.setAttribute('aria-label', 'back to active exercise');
   close.addEventListener('click', () => go('record'));
   tb.append(close);
 
-  const titleBox = el('div');
-  titleBox.style.flex = '1';
-  titleBox.style.lineHeight = '1.15';
+  const titleBox = el('div', 'detail-topbar-title');
   titleBox.append(html('div', 'eyebrow', 'CURRENT WORKOUT'));
   titleBox.append(html('div', 'title', sessionSplitTag(session)));
   tb.append(titleBox);
 
-  const elapsedBox = el('div');
-  elapsedBox.style.textAlign = 'right';
-  elapsedBox.style.lineHeight = '1.15';
+  const elapsedBox = el('div', 'detail-topbar-right');
   elapsedBox.append(html('div', 'eyebrow', 'ELAPSED'));
-  const elapsed = el('div', 'tnum');
-  elapsed.style.fontSize = 'var(--t-md)';
-  elapsed.style.fontWeight = '700';
+  const elapsed = el('div', 'tnum detail-topbar-value');
   elapsed.textContent = formatDurationPad(Math.floor((Date.now() - session.startedAt) / 1000));
   elapsedBox.append(elapsed);
   tb.append(elapsedBox);
@@ -54,14 +43,9 @@ export function renderWorkout(container) {
   const total = session.entries.length;
   const doneCount = session.entries.filter(entryDone).length;
   const pct = total ? doneCount / total : 0;
-  const progress = el('div');
-  progress.style.padding = '12px 16px 10px';
-  const progressLabel = el('div', 'row-baseline');
-  progressLabel.style.fontSize = 'var(--t-xs)';
-  progressLabel.style.letterSpacing = '0.1em';
-  progressLabel.style.color = 'var(--ink-soft)';
-  progressLabel.style.textTransform = 'uppercase';
-  progressLabel.append(html('span', null, `<strong style="color:var(--ink);font-weight:700">${doneCount} / ${total}</strong> EXERCISES`));
+  const progress = el('div', 'detail-progress');
+  const progressLabel = el('div', 'row-baseline detail-progress-label');
+  progressLabel.append(html('span', null, `<strong>${doneCount} / ${total}</strong> EXERCISES`));
   progressLabel.append(html('span', null, sessionSplitTag(session)));
   progress.append(progressLabel);
 
@@ -116,11 +100,9 @@ export function renderWorkout(container) {
 
   container.append(plan);
 
-  // Finish workout
-  const footer = el('div');
-  footer.style.padding = '10px 16px 12px';
-  footer.style.borderTop = '1px solid var(--line)';
-  footer.style.background = 'var(--bg)';
+  // Finish / abandon workout
+  const footer = el('div', 'detail-footer');
+
   const finish = el('button', 'btn-primary');
   finish.innerHTML = '<span>FINISH WORKOUT</span><span>→</span>';
   finish.addEventListener('click', () => {
@@ -129,6 +111,17 @@ export function renderWorkout(container) {
     go('home');
   });
   footer.append(finish);
+
+  const abandon = el('button', 'btn-secondary danger block');
+  abandon.textContent = '⌫ ABANDON WORKOUT';
+  abandon.addEventListener('click', () => {
+    const hasLogged = session.entries.some((e) => e.sets.length > 0);
+    if (hasLogged && !confirm('Abandon this session? Logged sets will be discarded.')) return;
+    abandonActiveSession();
+    go('home');
+  });
+  footer.append(abandon);
+
   container.append(footer);
 }
 
@@ -152,10 +145,8 @@ function planRow(entry, idx, doneCount) {
   marker.textContent = state === 'done' ? '✓' : state === 'current' ? '▶' : '○';
   row.append(marker);
 
-  const text = el('div');
-  text.style.minWidth = '0';
-  text.append(html('span', 'bold', exerciseLabel(entry.exerciseId)));
-  text.lastChild.style.fontSize = 'var(--t-md)';
+  const text = el('div', 'plan-row-text');
+  text.append(html('span', 'plan-row-name', exerciseLabel(entry.exerciseId)));
   text.append(html('div', 'plan-row-result', formatEntryResult(entry, state)));
   row.append(text);
 
