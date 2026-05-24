@@ -196,11 +196,14 @@ def mask_to_path(mask, scale_x, scale_y):
 
 
 # --- Trace a half ---
-def trace_half(body_mask, muscle_mask, view_w=200, view_h=520, name=""):
+def trace_half(body_mask, muscle_mask, name=""):
+    """Use the source bbox itself as the viewBox so coords are unscaled
+    (sx == sy == 1). This preserves the body's natural aspect ratio
+    perfectly — no horizontal/vertical squeezing. Each view ends up with
+    its own viewBox dimensions; CSS handles fitting them in the container."""
     h, w = body_mask.shape
-    # Scale factors to map source pixels into the chosen viewBox
-    sx = view_w / w
-    sy = view_h / h
+    view_w, view_h = w, h
+    sx = sy = 1.0
 
     # Body silhouette: the union mask has white separator-line holes everywhere
     # (which would each become their own potrace path). Fill the outer
@@ -239,7 +242,7 @@ def trace_half(body_mask, muscle_mask, view_w=200, view_h=520, name=""):
         })
     # Sort by cy then cx for stable iteration
     muscles.sort(key=lambda m: (m["cy_norm"], m["cx_norm"]))
-    return body_path, muscles, (sx, sy)
+    return body_path, muscles, view_w, view_h
 
 
 # Component index → muscle key (None = drop).
@@ -343,14 +346,16 @@ def emit_debug_svg(out_path, view_w, view_h, body_path, muscles):
 
 
 # --- Run for both views ---
-view_w, view_h = 200, 520
-front_body_path, front_muscles, _ = trace_half(front_body, front_muscle, view_w, view_h, "front")
-back_body_path, back_muscles, _ = trace_half(back_body, back_muscle, view_w, view_h, "back")
+# Each view's viewBox matches its source bbox so the body keeps its natural
+# aspect ratio (1:~1.91). Front and back may have slightly different viewBox
+# dimensions — that's fine, CSS lays them out side-by-side at equal height.
+front_body_path, front_muscles, fvw, fvh = trace_half(front_body, front_muscle, "front")
+back_body_path,  back_muscles,  bvw, bvh = trace_half(back_body,  back_muscle,  "back")
 
-emit_svg(OUT_DIR / "body-front.svg", view_w, view_h, front_body_path, front_muscles, FRONT_LABELS)
-emit_svg(OUT_DIR / "body-back.svg",  view_w, view_h, back_body_path,  back_muscles,  BACK_LABELS)
-emit_debug_svg(OUT_DIR / "_trace-front.svg", view_w, view_h, front_body_path, front_muscles)
-emit_debug_svg(OUT_DIR / "_trace-back.svg",  view_w, view_h, back_body_path,  back_muscles)
+emit_svg(OUT_DIR / "body-front.svg", fvw, fvh, front_body_path, front_muscles, FRONT_LABELS)
+emit_svg(OUT_DIR / "body-back.svg",  bvw, bvh, back_body_path,  back_muscles,  BACK_LABELS)
+emit_debug_svg(OUT_DIR / "_trace-front.svg", fvw, fvh, front_body_path, front_muscles)
+emit_debug_svg(OUT_DIR / "_trace-back.svg",  bvw, bvh, back_body_path,  back_muscles)
 
 # Dump the muscle metadata so we can review centers and decide on labels.
 def dump_meta(muscles, name):
