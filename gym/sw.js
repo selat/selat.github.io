@@ -6,7 +6,7 @@
    and lazy-cached on first fetch.
    ════════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'gym-v1';
+const CACHE_VERSION = 'gym-v2';
 
 const APP_SHELL = [
   './',
@@ -32,6 +32,8 @@ const APP_SHELL = [
   './ui/body.js',
   './ui/settings.js',
   './ui/shared.js',
+  './assets/body-front.svg',
+  './assets/body-back.svg',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png',

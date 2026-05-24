@@ -767,7 +767,19 @@
   margin-bottom: 2px;
   display: block;
 }
-.body-grid-side .diagram { height: 240px; }
+.body-grid-side .diagram {
+  height: 360px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+.body-grid-side .diagram svg {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+.body-grid-side .diagram #body { fill: var(--line); }
+.body-grid-side .diagram .muscle { fill: oklch(0.55 0 25); }
 .body-grid-side + .body-grid-side { border-left: 1px dashed var(--line-soft); }
 .recovery-legend {
   display: flex;
