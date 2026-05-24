@@ -48,6 +48,16 @@ export function startSessionFlow(exerciseIds = []) {
   go('record');
 }
 
+/** Set the active session's "current entry" pointer. Called from the
+    workout-overview screen so tapping a plan row jumps to that exercise
+    when the user returns to #record. Resets the command-card draft
+    since the previous exercise's prefilled weight/reps don't apply. */
+export function setCurrentEntryIdx(idx) {
+  currentEntryIdx = idx;
+  resetDraft();
+  timedDraft.entryIndex = null;
+}
+
 function resetDraft() {
   draftWeight = null;
   draftReps = null;

@@ -77,7 +77,21 @@ input, textarea, [contenteditable] {
   user-select: text;
 }
 
-button { font: inherit; cursor: pointer; color: inherit; }
+/* Kill platform button chrome (iOS button style, Chrome's gray gradient,
+   default rounded corners). All .btn-* classes set their own background
+   and borders explicitly, so removing the default doesn't break them. */
+button {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
+}
 input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
 

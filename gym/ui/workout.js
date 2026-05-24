@@ -8,7 +8,7 @@ import { getActiveSession, endActiveSession, exerciseLabel } from '../data/sessi
 import { sessionSplitTag } from '../data/derived.js';
 import { go } from '../app.js';
 import { el, html, divider, formatDurationPad } from './shared.js';
-import { openExercisePicker } from './session.js';
+import { openExercisePicker, setCurrentEntryIdx } from './session.js';
 import { addEntry } from '../data/sessions.js';
 
 export function renderWorkout(container) {
@@ -86,11 +86,16 @@ export function renderWorkout(container) {
     plan.append(planRow(entry, idx, doneCount));
   });
 
-  // + ADD EXERCISE
+  // + ADD EXERCISE — wrapped in a padded container so the button (which
+  // shrinks to content-width as a grid-display <button>) can use
+  // width: 100% to fill, while the wrapper provides breathing room
+  // around the dashed border.
+  const addWrap = el('div');
+  addWrap.style.padding = '12px 16px';
   const addRow = el('button', 'plan-row');
   addRow.type = 'button';
   addRow.style.border = '1px dashed var(--line)';
-  addRow.style.margin = '12px 16px';
+  addRow.style.width = '100%';
   addRow.style.gridTemplateColumns = '24px 1fr 14px';
   const plus = el('span', 'plan-row-marker');
   plus.textContent = '+';
@@ -106,7 +111,8 @@ export function renderWorkout(container) {
   addRow.addEventListener('click', () => openExercisePicker((exId) => {
     addEntry(exId);
   }));
-  plan.append(addRow);
+  addWrap.append(addRow);
+  plan.append(addWrap);
 
   container.append(plan);
 
@@ -148,19 +154,17 @@ function planRow(entry, idx, doneCount) {
 
   const text = el('div');
   text.style.minWidth = '0';
-  const head = el('div');
-  head.style.display = 'flex';
-  head.style.alignItems = 'baseline';
-  head.style.gap = '6px';
-  head.append(html('span', null,
-    `<span class="idx">${String(idx + 1).padStart(2, '0')}</span><span class="bold" style="font-size: var(--t-md);">${exerciseLabel(entry.exerciseId)}</span>`));
-  text.append(head);
+  text.append(html('span', 'bold', exerciseLabel(entry.exerciseId)));
+  text.lastChild.style.fontSize = 'var(--t-md)';
   text.append(html('div', 'plan-row-result', formatEntryResult(entry, state)));
   row.append(text);
 
   row.append(html('span', 'plan-row-chev', '›'));
 
-  row.addEventListener('click', () => go('record')); // active session shows whichever entry is selected; will jump there
+  row.addEventListener('click', () => {
+    setCurrentEntryIdx(idx);
+    go('record');
+  });
 
   return row;
 

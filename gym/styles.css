@@ -454,9 +454,15 @@
 .command-card-steppers {
   display: flex;
   gap: 12px;
+  /* Belt-and-suspenders against any future runaway intrinsic widths. */
+  min-width: 0;
 }
 .command-card-stepper {
   flex: 1;
+  /* min-width: 0 lets the column shrink below its <input>'s default
+     content width (~200px from size=20). Without it, both columns
+     refuse to shrink and the REPS column overflows the card. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -467,13 +473,22 @@
   text-transform: uppercase;
   opacity: 0.6;
   font-weight: 700;
+  /* The − / value / + row places the value in the middle (equal-width
+     48px buttons on either side), so centering the label over the
+     column also centers it over the value. */
+  text-align: center;
 }
 .command-card-stepper-row {
   display: flex;
   align-items: stretch;
+  min-width: 0;
 }
 .command-card-stepper-value {
   flex: 1;
+  /* min-width: 0 + width: 0 fully defeat the number input's intrinsic
+     size so flex can actually distribute the remaining space. */
+  min-width: 0;
+  width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -490,6 +505,11 @@
   font-family: var(--font-mono);
   padding: 0;
   min-height: 48px;
+  /* Reset textfield styling so the input draws like a label. */
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
 }
 
 

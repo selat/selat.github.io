@@ -277,8 +277,8 @@ function pastEntryRow(entry, idx) {
 
   const text = el('div');
   text.style.minWidth = '0';
-  text.append(html('div', null,
-    `<span class="idx" style="font-size:var(--t-xs);color:var(--ink-muted);font-weight:500;letter-spacing:0.08em;margin-right:6px;">${String(idx + 1).padStart(2, '0')}</span><span class="bold" style="font-size: var(--t-md);">${exerciseLabel(entry.exerciseId)}</span>`));
+  text.append(html('span', 'bold', exerciseLabel(entry.exerciseId)));
+  text.lastChild.style.fontSize = 'var(--t-md)';
   text.append(html('div', 'plan-row-result', formatResult(working)));
   row.append(text);
 
