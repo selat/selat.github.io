@@ -38,6 +38,7 @@ let draftWeight = null;        // command card weight (kg)
 let draftReps = null;          // command card reps
 let draftIsWarmup = false;
 let draftPerSide = false;
+let extraPlannedSets = 0;      // each ADD SET tap bumps the planned count by 1
 let restInterval = null;
 let lastRestRemaining = null;
 
@@ -79,6 +80,7 @@ function resetDraft() {
   draftReps = null;
   draftIsWarmup = false;
   draftPerSide = false;
+  extraPlannedSets = 0;
 }
 
 
@@ -120,6 +122,7 @@ export function renderSession(container) {
     body.append(timedView(session, entry));
   } else {
     body.append(setsTable(session, entry));
+    body.append(addSetButton());
     body.append(primaryAction(session, entry));
   }
 
@@ -404,16 +407,31 @@ function setsTable(session, entry) {
     wrap.append(row);
   });
 
-  // Command card for next set
-  wrap.append(commandCard(entry));
+  // Once all planned working sets are logged, hide the command card and
+  // the upcoming-rows preview. Each tap of ADD SET bumps the effective
+  // plan up by one, which both un-hides the card and grows this preview.
+  const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
+  const plannedDone = workingDone >= effectivePlannedCount(entry.exerciseId);
+  const showCard = !plannedDone;
 
-  // Upcoming planned-but-not-yet-logged working sets, wrapped in their
-  // own container so refreshCard() can rebuild just this subtree when
-  // the draft changes (the count and per-row text depend on draft state).
-  const upcoming = el('div');
-  upcomingRowsContainer = upcoming;
-  buildUpcomingRows(upcoming, entry);
-  wrap.append(upcoming);
+  if (showCard) {
+    wrap.append(commandCard(entry));
+
+    // Upcoming planned-but-not-yet-logged working sets, wrapped in their
+    // own container so refreshCard() can rebuild just this subtree when
+    // the draft changes (the count and per-row text depend on draft state).
+    const upcoming = el('div');
+    upcomingRowsContainer = upcoming;
+    buildUpcomingRows(upcoming, entry);
+    wrap.append(upcoming);
+  } else {
+    cmdCardHeaderEl = null;
+    cmdCardWeightInput = null;
+    cmdCardRepsInput = null;
+    cmdCardWarmupPill = null;
+    cmdCardPerSidePill = null;
+    upcomingRowsContainer = null;
+  }
 
   return wrap;
 }
@@ -422,7 +440,7 @@ function buildUpcomingRows(container, entry) {
   // The command card already occupies one slot (warmup or working); show
   // the remainder beneath it, prefilled with the draft weight/reps so the
   // table reads like a single continuous plan.
-  const plannedWorking = plannedWorkingSetCount(entry.exerciseId);
+  const plannedWorking = effectivePlannedCount(entry.exerciseId);
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
   const upcomingCount = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
   for (let i = 0; i < upcomingCount; i++) {
@@ -448,6 +466,11 @@ function plannedWorkingSetCount(exerciseId) {
     }
   }
   return DEFAULT_WORKING_SETS;
+}
+
+// Effective plan = historical baseline + any ADD SET bumps this session.
+function effectivePlannedCount(exerciseId) {
+  return plannedWorkingSetCount(exerciseId) + extraPlannedSets;
 }
 
 function warmupIndex(entry, atIndex) {
@@ -635,11 +658,11 @@ function buildPrimaryActionInto(wrap, session, entry) {
   const total = session.entries.length;
   const isLast = currentEntryIdx === total - 1;
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
-  const plannedDone = !draftIsWarmup && workingDone >= plannedWorkingSetCount(entry.exerciseId);
+  const plannedDone = !draftIsWarmup && workingDone >= effectivePlannedCount(entry.exerciseId);
 
   // Once all planned working sets are logged, swap LOG SET for the
   // primary advance action (NEXT EXERCISE, or REVIEW WORKOUT on the
-  // last one).
+  // last one). The ADD SET affordance lives in its own slot above us.
   if (plannedDone) {
     const advance = el('button', 'btn-primary');
     advance.style.justifyContent = 'space-between';
@@ -694,6 +717,19 @@ function buildPrimaryActionInto(wrap, session, entry) {
     // user typically does the same load again. They can nudge between sets.
   });
   wrap.append(btn);
+}
+
+function addSetButton() {
+  const btn = el('button', 'btn-add');
+  btn.style.marginTop = '10px';
+  btn.textContent = '+ ADD SET';
+  btn.addEventListener('click', () => {
+    // Bump the effective plan by one — grows the upcoming-rows preview
+    // during the planned flow, and un-hides the card past plannedDone.
+    extraPlannedSets++;
+    rerenderFull();
+  });
+  return btn;
 }
 
 function addExerciseBtn() {
