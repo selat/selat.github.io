@@ -41,6 +41,21 @@ let draftPerSide = false;
 let restInterval = null;
 let lastRestRemaining = null;
 
+// DOM refs into the currently-rendered command card. refreshCard() patches
+// these in place rather than calling renderSession(), so adjusting a
+// stepper or toggling warmup doesn't redraw the topbar, banner, header,
+// pills row, or logged-set rows. Repopulated on every full renderSession;
+// stale refs from a previous render are simply overwritten when the new
+// card mounts (and refreshCard's handlers can only fire from the live
+// card, so there's no window for them to touch detached nodes).
+let cmdCardHeaderEl = null;
+let cmdCardWeightInput = null;
+let cmdCardRepsInput = null;
+let cmdCardWarmupPill = null;
+let cmdCardPerSidePill = null;
+let upcomingRowsContainer = null;
+let primaryActionContainer = null;
+
 
 export function startSessionFlow(exerciseIds = []) {
   startSession(exerciseIds);
@@ -313,10 +328,12 @@ function exerciseHeader(session, entry) {
     const prev = navBtn('‹', () => {
       currentEntryIdx = (currentEntryIdx - 1 + total) % total;
       resetDraft();
+      rerenderFull();
     });
     const next = navBtn('›', () => {
       currentEntryIdx = (currentEntryIdx + 1) % total;
       resetDraft();
+      rerenderFull();
     });
     nav.append(prev, next);
     head.append(nav);
@@ -390,10 +407,21 @@ function setsTable(session, entry) {
   // Command card for next set
   wrap.append(commandCard(entry));
 
-  // Upcoming planned-but-not-yet-logged working sets. The command card
-  // already occupies one slot (warmup or working); show the remainder
-  // beneath it, prefilled with the same weight/reps so the table reads
-  // like a single continuous plan.
+  // Upcoming planned-but-not-yet-logged working sets, wrapped in their
+  // own container so refreshCard() can rebuild just this subtree when
+  // the draft changes (the count and per-row text depend on draft state).
+  const upcoming = el('div');
+  upcomingRowsContainer = upcoming;
+  buildUpcomingRows(upcoming, entry);
+  wrap.append(upcoming);
+
+  return wrap;
+}
+
+function buildUpcomingRows(container, entry) {
+  // The command card already occupies one slot (warmup or working); show
+  // the remainder beneath it, prefilled with the draft weight/reps so the
+  // table reads like a single continuous plan.
   const plannedWorking = plannedWorkingSetCount(entry.exerciseId);
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
   const upcomingCount = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
@@ -404,9 +432,8 @@ function setsTable(session, entry) {
     row.append(el('span', null, formatNumber(draftWeight) + (draftPerSide ? ' ×2' : '')));
     row.append(el('span', null, String(draftReps)));
     row.append(el('span', 'check', '○'));
-    wrap.append(row);
+    container.append(row);
   }
-  return wrap;
 }
 
 function plannedWorkingSetCount(exerciseId) {
@@ -454,19 +481,25 @@ function commandCard(entry) {
   const card = el('div', 'command-card');
 
   const head = el('div', 'command-card-head');
-  head.append(html('span', null,
-    draftIsWarmup ? `▶ WARMUP · NOW` : `▶ SET ${setNum} · NOW`));
+  cmdCardHeaderEl = html('span', null,
+    draftIsWarmup ? `▶ WARMUP · NOW` : `▶ SET ${setNum} · NOW`);
+  head.append(cmdCardHeaderEl);
   card.append(head);
 
   const steppers = el('div', 'command-card-steppers');
-  steppers.append(stepperBlock('KG', draftWeight,
+  const weightStepper = stepperBlock('KG', draftWeight,
     (delta) => { draftWeight = Math.max(0, +(draftWeight + delta).toFixed(2)); refreshCard(); },
     (raw) => { const v = parseFloat(raw); draftWeight = isFinite(v) ? Math.max(0, v) : 0; },
-    2.5));
-  steppers.append(stepperBlock('REPS', draftReps,
+    2.5);
+  cmdCardWeightInput = weightStepper.querySelector('input');
+  steppers.append(weightStepper);
+
+  const repsStepper = stepperBlock('REPS', draftReps,
     (delta) => { draftReps = Math.max(0, draftReps + delta); refreshCard(); },
     (raw) => { const v = parseInt(raw, 10); draftReps = isFinite(v) ? Math.max(0, v) : 0; },
-    1));
+    1);
+  cmdCardRepsInput = repsStepper.querySelector('input');
+  steppers.append(repsStepper);
   card.append(steppers);
 
   // Warmup + per-side toggles (mini)
@@ -475,9 +508,18 @@ function commandCard(entry) {
   toggles.style.gap = '6px';
   toggles.style.flexWrap = 'wrap';
   toggles.style.marginTop = '2px';
-  toggles.append(togglePill('WARMUP', draftIsWarmup, (v) => { draftIsWarmup = v; refreshCard(); }));
+  cmdCardWarmupPill = togglePill('WARMUP', draftIsWarmup, () => {
+    draftIsWarmup = !draftIsWarmup;
+    refreshCard();
+  });
+  toggles.append(cmdCardWarmupPill);
+  cmdCardPerSidePill = null;
   if (ex?.bilateral || draftPerSide) {
-    toggles.append(togglePill('PER SIDE', draftPerSide, (v) => { draftPerSide = v; refreshCard(); }));
+    cmdCardPerSidePill = togglePill('PER SIDE', draftPerSide, () => {
+      draftPerSide = !draftPerSide;
+      refreshCard();
+    });
+    toggles.append(cmdCardPerSidePill);
   }
   card.append(toggles);
 
@@ -511,22 +553,69 @@ function stepperBlock(label, value, onStep, onType, step) {
   return wrap;
 }
 
-function togglePill(label, on, onChange) {
-  const c = el('button', 'pill toggle' + (on ? ' on' : ''));
+function togglePill(label, on, onToggle) {
+  const c = el('button', 'pill toggle');
   c.type = 'button';
   c.textContent = label;
-  c.style.opacity = on ? '1' : '0.6';
-  c.style.background = on ? 'rgba(232,240,230,0.85)' : 'transparent';
-  c.style.color = on ? 'var(--bg)' : 'var(--bg)';
   c.style.borderColor = 'rgba(255,255,255,0.30)';
-  c.addEventListener('click', () => onChange(!on));
+  c.style.color = 'var(--bg)';
+  applyToggleState(c, on);
+  // onToggle is responsible for flipping the underlying state and calling
+  // refreshCard — the click handler doesn't capture `on`, so the pill
+  // can be re-skinned in place by refreshCard without needing rebuild.
+  c.addEventListener('click', () => onToggle());
   return c;
 }
 
+function applyToggleState(c, on) {
+  c.classList.toggle('on', on);
+  c.style.opacity = on ? '1' : '0.6';
+  c.style.background = on ? 'rgba(232,240,230,0.85)' : 'transparent';
+}
+
+/* Localised update for a draft change (stepper +/-, warmup/per-side
+   toggle). Patches only the parts of the screen that depend on draft
+   state — the card header, stepper input values, toggle pill skins, the
+   upcoming-rows preview, and the primary action — leaving the topbar,
+   rest banner, exercise header, pills row, and logged-set rows untouched. */
 function refreshCard() {
-  // Trigger a screen re-render so the table redraws and the input rerenders.
-  // We do a local rerender by triggering subscribe via a no-op mutate — but
-  // simpler: just re-call renderSession with the current container.
+  if (!cmdCardHeaderEl) return;
+  const session = getActiveSession();
+  if (!session) return;
+  const entry = session.entries[currentEntryIdx];
+  if (!entry) return;
+
+  const workingCount = entry.sets.filter((s) => !s.isWarmup).length;
+  const setNum = workingCount + 1;
+  cmdCardHeaderEl.textContent = draftIsWarmup ? '▶ WARMUP · NOW' : `▶ SET ${setNum} · NOW`;
+
+  // Don't clobber an in-progress edit if the user is typing into a stepper.
+  if (cmdCardWeightInput && document.activeElement !== cmdCardWeightInput) {
+    cmdCardWeightInput.value = formatNumber(draftWeight);
+  }
+  if (cmdCardRepsInput && document.activeElement !== cmdCardRepsInput) {
+    cmdCardRepsInput.value = formatNumber(draftReps);
+  }
+
+  if (cmdCardWarmupPill) applyToggleState(cmdCardWarmupPill, draftIsWarmup);
+  if (cmdCardPerSidePill) applyToggleState(cmdCardPerSidePill, draftPerSide);
+
+  if (upcomingRowsContainer) {
+    upcomingRowsContainer.replaceChildren();
+    buildUpcomingRows(upcomingRowsContainer, entry);
+  }
+
+  if (primaryActionContainer) {
+    primaryActionContainer.replaceChildren();
+    buildPrimaryActionInto(primaryActionContainer, session, entry);
+  }
+}
+
+/* Full re-render fallback for structural changes that refreshCard can't
+   handle in place — entry navigation, adding/removing entries, etc.
+   Storage mutations already trigger this via the subscribe path; this
+   helper is for click handlers that change UI state without mutating. */
+function rerenderFull() {
   const screen = document.getElementById('screen');
   if (screen) renderSession(screen);
 }
@@ -537,7 +626,12 @@ function refreshCard() {
 function primaryAction(session, entry) {
   const wrap = el('div', 'section-mt');
   wrap.style.marginTop = '10px';
+  primaryActionContainer = wrap;
+  buildPrimaryActionInto(wrap, session, entry);
+  return wrap;
+}
 
+function buildPrimaryActionInto(wrap, session, entry) {
   const total = session.entries.length;
   const isLast = currentEntryIdx === total - 1;
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
@@ -557,11 +651,11 @@ function primaryAction(session, entry) {
       advance.addEventListener('click', () => {
         currentEntryIdx++;
         resetDraft();
-        refreshCard();
+        rerenderFull();
       });
     }
     wrap.append(advance);
-    return wrap;
+    return;
   }
 
   const btn = el('button', 'btn-primary');
@@ -600,7 +694,6 @@ function primaryAction(session, entry) {
     // user typically does the same load again. They can nudge between sets.
   });
   wrap.append(btn);
-  return wrap;
 }
 
 function addExerciseBtn() {
@@ -608,11 +701,14 @@ function addExerciseBtn() {
   btn.style.marginTop = '14px';
   btn.textContent = '+ ADD EXERCISE';
   btn.addEventListener('click', () => openExercisePicker((exId) => {
+    // addEntry's mutate triggers a renderSession via subscribe, but using
+    // the OLD currentEntryIdx — we need a second render to jump to the new
+    // entry after we update the index below.
     addEntry(exId);
-    // Jump to the newly added entry.
     const session = getActiveSession();
     if (session) currentEntryIdx = session.entries.length - 1;
     resetDraft();
+    rerenderFull();
   }));
   return btn;
 }
@@ -1005,6 +1101,7 @@ function timedAction(entry, hold, isDone, targetSec, restSec) {
         currentEntryIdx++;
         resetDraft();
         timedDraft.entryIndex = null;
+        rerenderFull();
       });
     }
     wrap.append(next);
