@@ -59,9 +59,14 @@ let primaryActionContainer = null;
 
 
 export function startSessionFlow(exerciseIds = []) {
-  startSession(exerciseIds);
+  // Reset BEFORE startSession — the mutate it does triggers a synchronous
+  // rerender, which runs commandCard and initialises draftReps from
+  // history. If we reset afterwards, draftReps gets clobbered back to
+  // null while the rendered stepper still shows the seeded value, and
+  // the next LOG SET click fails the "reps must be > 0" guard.
   currentEntryIdx = 0;
   resetDraft();
+  startSession(exerciseIds);
   go('record');
 }
 
