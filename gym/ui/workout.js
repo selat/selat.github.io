@@ -113,7 +113,7 @@ export function renderWorkout(container) {
   footer.append(finish);
 
   const abandon = el('button', 'btn-secondary danger block');
-  abandon.textContent = '⌫ ABANDON WORKOUT';
+  abandon.textContent = 'ABANDON WORKOUT';
   abandon.addEventListener('click', () => {
     const hasLogged = session.entries.some((e) => e.sets.length > 0);
     if (hasLogged && !confirm('Abandon this session? Logged sets will be discarded.')) return;
