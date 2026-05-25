@@ -768,14 +768,14 @@
   display: block;
 }
 .body-grid-side .diagram {
-  height: 360px;
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
+  /* Height auto-derives from SVG aspect — both views share the same viewBox
+     dimensions (padded to common canvas at trace time), so front and back
+     always render at identical heights. */
+  display: block;
 }
 .body-grid-side .diagram svg {
-  height: 100%;
-  width: auto;
+  width: 100%;
+  height: auto;
   display: block;
 }
 .body-grid-side .diagram #body { fill: var(--line); }

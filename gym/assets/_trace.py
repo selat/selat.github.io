@@ -90,6 +90,26 @@ print(f"Front: {front_body.shape}  bbox {front_bb}")
 print(f"Back:  {back_body.shape}  bbox {back_bb}")
 
 
+# Pad both halves to a common canvas so the resulting SVGs share viewBox
+# dimensions. With identical viewBoxes the front and back render at exactly
+# the same height when laid out side-by-side in CSS (just `width: 100%`).
+def pad_to(mask, target_w, target_h):
+    h, w = mask.shape
+    out = np.zeros((target_h, target_w), dtype=mask.dtype)
+    ox = (target_w - w) // 2
+    oy = (target_h - h) // 2
+    out[oy:oy+h, ox:ox+w] = mask
+    return out
+
+CANVAS_W = max(front_body.shape[1], back_body.shape[1])
+CANVAS_H = max(front_body.shape[0], back_body.shape[0])
+print(f"Common canvas: {CANVAS_W}x{CANVAS_H}")
+front_body   = pad_to(front_body,   CANVAS_W, CANVAS_H)
+front_muscle = pad_to(front_muscle, CANVAS_W, CANVAS_H)
+back_body    = pad_to(back_body,    CANVAS_W, CANVAS_H)
+back_muscle  = pad_to(back_muscle,  CANVAS_W, CANVAS_H)
+
+
 # --- Vectorize a binary mask via potrace ---
 import subprocess, re, tempfile, os
 
