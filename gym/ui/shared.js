@@ -154,3 +154,59 @@ export function playChime() {
     osc.stop(t0 + dur + 0.02);
   }
 }
+
+
+/* ── Haptics ─────────────────────────────────────────────────────── */
+
+export function vibrate(pattern) {
+  if (!('vibrate' in navigator)) return;
+  try { navigator.vibrate(pattern); } catch {}
+}
+
+
+/* ── Screen wake lock ────────────────────────────────────────────── */
+/* Browsers auto-release the wake lock when the tab is hidden, so we
+   track the *desired* state and re-acquire on visibilitychange. */
+
+let _wakeLock = null;
+let _wakeLockWanted = false;
+
+async function _acquireWakeLock() {
+  if (!('wakeLock' in navigator) || _wakeLock) return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+    _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+  } catch {
+    _wakeLock = null;
+  }
+}
+
+function _releaseWakeLock() {
+  if (!_wakeLock) return;
+  _wakeLock.release().catch(() => {});
+  _wakeLock = null;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (_wakeLockWanted && document.visibilityState === 'visible') _acquireWakeLock();
+});
+
+export function setKeepScreenAwake(on) {
+  _wakeLockWanted = on;
+  if (on) _acquireWakeLock();
+  else _releaseWakeLock();
+}
+
+
+/* ── Notifications (one-shot, e.g. rest done) ───────────────────── */
+
+export function ensureNotificationPermission() {
+  if (!('Notification' in window)) return Promise.resolve('denied');
+  if (Notification.permission !== 'default') return Promise.resolve(Notification.permission);
+  return Notification.requestPermission().catch(() => 'denied');
+}
+
+export function notify(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body, tag: 'gym-rest', renotify: true }); } catch {}
+}

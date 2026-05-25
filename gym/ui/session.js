@@ -27,7 +27,8 @@ import { listExercises, getExercise } from '../data/exercises.js';
 import { getDb } from '../data/storage.js';
 import { lastWorkingSet, lastSetSummary, sessionPRMarks, sessionSplitTag } from '../data/derived.js';
 import { openSheet, go } from '../app.js';
-import { el, html, pill, formatDuration, formatDurationPad, playChime } from './shared.js';
+import { el, html, pill, formatDuration, formatDurationPad, playChime,
+         vibrate, setKeepScreenAwake, ensureNotificationPermission, notify } from './shared.js';
 
 const DEFAULT_WORKING_SETS = 3;
 
@@ -158,7 +159,7 @@ function restBanner(rest) {
   bar.append(v);
   const skip = el('button', 'session-top-aside');
   skip.textContent = done ? 'DISMISS ×' : 'SKIP ▶';
-  skip.addEventListener('click', () => clearRest());
+  skip.addEventListener('click', () => { clearRest(); setKeepScreenAwake(false); });
   bar.append(skip);
   return bar;
 }
@@ -204,6 +205,9 @@ function tickRestBanner() {
   } else {
     if (lastRestRemaining !== 0) {
       playChime();
+      vibrate([200, 100, 200]);
+      notify('Rest done', exerciseLabel(rest.exerciseId));
+      setKeepScreenAwake(false);
       banner.classList.remove('rest');
       banner.classList.add('done');
       count.textContent = '✓';
@@ -589,6 +593,8 @@ function primaryAction(session, entry) {
     if (!wasWarmup) {
       const dur = ex?.defaultRest ?? getDb().settings.defaultRest;
       startRest(entry.exerciseId, dur);
+      setKeepScreenAwake(true);
+      ensureNotificationPermission();
     }
     // After logging a working set, do NOT auto-reset draftWeight/reps —
     // user typically does the same load again. They can nudge between sets.
