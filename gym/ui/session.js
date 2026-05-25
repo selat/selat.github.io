@@ -443,13 +443,16 @@ function setsTable(session, entry) {
 
 function buildUpcomingRows(container, entry) {
   // The command card already occupies one slot (warmup or working); show
-  // the remainder beneath it, prefilled with the draft weight/reps so the
-  // table reads like a single continuous plan.
+  // the remainder beneath it. Each upcoming row previews its own slot's
+  // default — warmups follow the ramp, working rows mirror the working
+  // baseline (or the just-nudged draft once we're past the warmups).
   const ex = getExercise(entry.exerciseId);
   const plannedWarmups = ex?.defaultWarmupSets ?? 0;
   const loggedWarmups = entry.sets.filter((s) => s.isWarmup).length;
   const plannedWorking = effectivePlannedCount(entry.exerciseId);
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
+  const bar = ex?.equipmentWeight ?? 0;
+  const workingRef = lastWorkingSet(entry.exerciseId);
 
   // Upcoming warmups — only previewed while the card itself is on a warmup.
   // Toggling WARMUP off means the user is skipping the remaining warmups,
@@ -457,23 +460,35 @@ function buildUpcomingRows(container, entry) {
   const remainingWarmups = draftIsWarmup
     ? Math.max(0, plannedWarmups - loggedWarmups - 1)
     : 0;
-  for (let i = 0; i < remainingWarmups; i++) {
-    const wNum = loggedWarmups + 2 + i;
-    container.append(upcomingRow('W' + wNum));
+  if (remainingWarmups > 0) {
+    const ramp = warmupRamp(plannedWarmups, bar > 0);
+    const W = workingRef?.weight ?? 0;
+    for (let i = 0; i < remainingWarmups; i++) {
+      const idx = Math.min(loggedWarmups + 1 + i, ramp.length - 1);
+      const step = ramp[idx];
+      const w = Math.max(bar, roundToStep(step.rel * W, 2.5));
+      const wNum = loggedWarmups + 2 + i;
+      container.append(upcomingRow('W' + wNum, w, step.reps));
+    }
   }
 
   const upcomingWorking = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
+  // While on a warmup, working previews mirror the historical baseline
+  // (not the warmup weight). Once on a working set, mirror the draft
+  // so the user's nudges propagate down the table.
+  const previewWeight = draftIsWarmup ? (workingRef?.weight ?? 0) : draftWeight;
+  const previewReps   = draftIsWarmup ? (workingRef?.reps   ?? 8) : draftReps;
   for (let i = 0; i < upcomingWorking; i++) {
     const setNum = workingDone + (draftIsWarmup ? 1 : 2) + i;
-    container.append(upcomingRow(String(setNum)));
+    container.append(upcomingRow(String(setNum), previewWeight, previewReps));
   }
 }
 
-function upcomingRow(numLabel) {
+function upcomingRow(numLabel, weight, reps) {
   const row = el('div', 'sets-row upcoming');
   row.append(el('span', 'num', numLabel));
-  row.append(el('span', null, formatNumber(draftWeight) + (draftPerSide ? ' ×2' : '')));
-  row.append(el('span', null, String(draftReps)));
+  row.append(el('span', null, formatNumber(weight) + (draftPerSide ? ' ×2' : '')));
+  row.append(el('span', null, String(reps)));
   row.append(el('span', 'check', '○'));
   return row;
 }
@@ -509,27 +524,88 @@ function formatNumber(v) {
 }
 
 
+/* ── Warmup ramp + per-slot default draft ────────────────────────────
+   Ramp tables follow the table from the README discussion: barbell lifts
+   start at the empty bar with descending reps as the load climbs; dumbbell
+   and machine ramps use pure percentages since there's no bar to anchor
+   the first set. Reps drop with load to keep warmups as prep, not work. */
+
+function warmupRamp(totalWarmups, hasBar) {
+  if (totalWarmups <= 0) return [];
+  if (totalWarmups === 1) return [{ rel: 0.6, reps: 8 }];
+  const barTable = {
+    2: [[0, 5], [0.65, 5]],
+    3: [[0, 5], [0.5, 5], [0.75, 3]],
+    4: [[0, 5], [0.4, 5], [0.65, 3], [0.85, 2]],
+  };
+  const pctTable = {
+    2: [[0.5, 8], [0.75, 5]],
+    3: [[0.4, 8], [0.6, 5], [0.8, 3]],
+    4: [[0.4, 8], [0.55, 5], [0.7, 3], [0.85, 2]],
+  };
+  const table = hasBar ? barTable : pctTable;
+  const arr = table[totalWarmups] ?? table[4];
+  return arr.map(([rel, reps]) => ({ rel, reps }));
+}
+
+function roundToStep(v, step) {
+  return Math.round(v / step) * step;
+}
+
+/* Default draft for the NEXT slot of an entry. Warmup until either the
+   planned warmup count is logged or any working set is logged (so toggling
+   WARMUP back on mid-session and logging an extra warmup doesn't loop us
+   back into "warmup mode" — the user opted out, we trust it). */
+function defaultDraftForNextSlot(entry, ex) {
+  const totalWarmups = ex?.defaultWarmupSets ?? 0;
+  const loggedWarmups = entry.sets.filter((s) => s.isWarmup).length;
+  const workingLogged = entry.sets.filter((s) => !s.isWarmup).length;
+  const nextIsWarmup = workingLogged === 0 && loggedWarmups < totalWarmups;
+  const bar = ex?.equipmentWeight ?? 0;
+
+  if (nextIsWarmup) {
+    const ramp = warmupRamp(totalWarmups, bar > 0);
+    const step = ramp[Math.min(loggedWarmups, ramp.length - 1)];
+    const workingRef = lastWorkingSet(entry.exerciseId);
+    const W = workingRef?.weight ?? 0;
+    const weight = Math.max(bar, roundToStep(step.rel * W, 2.5));
+    return { weight, reps: step.reps, isWarmup: true, perSide: !!ex?.bilateral };
+  }
+
+  const lastInEntry = [...entry.sets].reverse().find((s) => !s.isWarmup);
+  const ref = lastInEntry ?? lastWorkingSet(entry.exerciseId);
+  return {
+    weight: ref?.weight ?? 0,
+    reps: ref?.reps ?? 8,
+    isWarmup: false,
+    perSide: !!(ref?.perSide ?? ex?.bilateral),
+  };
+}
+
+
 /* ── Command card (next set steppers) ────────────────────────────── */
 
 function commandCard(entry) {
   const ex = getExercise(entry.exerciseId);
   const workingCount = entry.sets.filter((s) => !s.isWarmup).length;
+  const loggedWarmups = entry.sets.filter((s) => s.isWarmup).length;
   const setNum = workingCount + 1;
+  const warmupNum = loggedWarmups + 1;
 
   // Initialise draft if needed.
   if (draftWeight === null || draftReps === null) {
-    const last = entry.sets[entry.sets.length - 1] ?? lastWorkingSet(entry.exerciseId);
-    draftWeight = last?.weight ?? 0;
-    draftReps   = last?.reps   ?? 8;
-    draftIsWarmup = workingCount < 0 ? false : entry.sets.length < (ex?.defaultWarmupSets ?? 0);
-    draftPerSide = !!(last?.perSide ?? ex?.bilateral);
+    const d = defaultDraftForNextSlot(entry, ex);
+    draftWeight = d.weight;
+    draftReps = d.reps;
+    draftIsWarmup = d.isWarmup;
+    draftPerSide = d.perSide;
   }
 
   const card = el('div', 'command-card');
 
   const head = el('div', 'command-card-head');
   cmdCardHeaderEl = html('span', null,
-    draftIsWarmup ? `▶ WARMUP · NOW` : `▶ SET ${setNum} · NOW`);
+    draftIsWarmup ? `▶ WARMUP ${warmupNum} · NOW` : `▶ SET ${setNum} · NOW`);
   head.append(cmdCardHeaderEl);
   card.append(head);
 
@@ -633,8 +709,10 @@ function refreshCard() {
   if (!entry) return;
 
   const workingCount = entry.sets.filter((s) => !s.isWarmup).length;
+  const loggedWarmups = entry.sets.filter((s) => s.isWarmup).length;
   const setNum = workingCount + 1;
-  cmdCardHeaderEl.textContent = draftIsWarmup ? '▶ WARMUP · NOW' : `▶ SET ${setNum} · NOW`;
+  const warmupNum = loggedWarmups + 1;
+  cmdCardHeaderEl.textContent = draftIsWarmup ? `▶ WARMUP ${warmupNum} · NOW` : `▶ SET ${setNum} · NOW`;
 
   // Don't clobber an in-progress edit if the user is typing into a stepper.
   if (cmdCardWeightInput && document.activeElement !== cmdCardWeightInput) {
@@ -710,35 +788,33 @@ function buildPrimaryActionInto(wrap, session, entry) {
   btn.innerHTML = `<span>LOG SET</span><span style="font-weight:700; opacity:0.5;">${draftIsWarmup ? 'W' : '↵'}</span>`;
   btn.addEventListener('click', () => {
     if (draftReps <= 0) { alert('Reps must be > 0'); return; }
-    const wasWarmup = draftIsWarmup;
-    const wasWeight = draftWeight;
-    const wasReps = draftReps;
-    const wasPerSide = draftPerSide;
-
-    // Update draft state BEFORE addSet so the post-mutate rerender sees
-    // the new state. Auto-flip out of warmup once enough warmups logged.
     const ex = getExercise(entry.exerciseId);
-    const totalWarmupsAfter = entry.sets.filter((s) => s.isWarmup).length + (wasWarmup ? 1 : 0);
-    if (wasWarmup && totalWarmupsAfter >= (ex?.defaultWarmupSets ?? 0)) {
-      draftIsWarmup = false;
-    }
+    const newSet = {
+      weight: draftWeight,
+      reps: draftReps,
+      isWarmup: draftIsWarmup,
+      perSide: draftPerSide,
+    };
 
-    addSet(currentEntryIdx, {
-      weight: wasWeight,
-      reps: wasReps,
-      isWarmup: wasWarmup,
-      perSide: wasPerSide,
-    });
+    // Compute the draft for the slot AFTER this one BEFORE addSet so the
+    // post-mutate re-render reads the new state. The slot may shift type:
+    // warmup → next warmup (ramp), last warmup → first working set, or
+    // working → working (mirrors the just-logged values).
+    const postEntry = { ...entry, sets: [...entry.sets, newSet] };
+    const next = defaultDraftForNextSlot(postEntry, ex);
+    draftWeight = next.weight;
+    draftReps = next.reps;
+    draftIsWarmup = next.isWarmup;
+    draftPerSide = next.perSide;
 
-    // Auto rest for working sets.
-    if (!wasWarmup) {
+    addSet(currentEntryIdx, newSet);
+
+    if (!newSet.isWarmup) {
       const dur = ex?.defaultRest ?? getDb().settings.defaultRest;
       startRest(entry.exerciseId, dur);
       setKeepScreenAwake(true);
       ensureNotificationPermission();
     }
-    // After logging a working set, do NOT auto-reset draftWeight/reps —
-    // user typically does the same load again. They can nudge between sets.
   });
   wrap.append(btn);
 }

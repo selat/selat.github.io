@@ -142,10 +142,11 @@ function openExerciseEditor(existing) {
       defaultRest: existing.defaultRest ?? 120,
       defaultWarmupSets: existing.defaultWarmupSets ?? 0,
       defaultTargetSec: existing.defaultTargetSec ?? 60,
+      equipmentWeight: existing.equipmentWeight ?? 0,
     } : {
       name: '', bilateral: false, isTimed: false,
       muscles: { primary: [], secondary: [] },
-      defaultRest: 120, defaultWarmupSets: 0, defaultTargetSec: 60,
+      defaultRest: 120, defaultWarmupSets: 0, defaultTargetSec: 60, equipmentWeight: 0,
     };
 
     const root = document.createElement('div');
@@ -175,8 +176,11 @@ function openExerciseEditor(existing) {
     root.append(muscleSelector('PRIMARY MUSCLES', draft.muscles.primary, (next) => { draft.muscles.primary = next; }));
     root.append(muscleSelector('SECONDARY MUSCLES', draft.muscles.secondary, (next) => { draft.muscles.secondary = next; }));
 
-    // Rest + warmup (+ target hold for timed)
-    const defaults = el('div', 'grid-2');
+    // Rest + warmup + bar weight (or target hold for timed).
+    // Bar weight only meaningfully drives the warmup ramp on barbell lifts
+    // — 0 (default) means "no bar", which the session-time logic treats as
+    // a pure-percentage ramp.
+    const defaults = el('div', draft.isTimed ? 'grid-2' : 'grid-3');
     defaults.style.gap = '10px';
     defaults.style.marginTop = '12px';
     defaults.append(numField('REST (SEC)', draft.defaultRest, (v) => { draft.defaultRest = v; }, 15));
@@ -184,6 +188,7 @@ function openExerciseEditor(existing) {
       defaults.append(numField('TARGET HOLD (SEC)', draft.defaultTargetSec, (v) => { draft.defaultTargetSec = v; }, 15));
     } else {
       defaults.append(numField('WARMUP SETS', draft.defaultWarmupSets, (v) => { draft.defaultWarmupSets = v; }, 1));
+      defaults.append(numField('BAR (KG)', draft.equipmentWeight, (v) => { draft.equipmentWeight = v; }, 2.5, true));
     }
     root.append(defaults);
 
@@ -218,7 +223,7 @@ function openExerciseEditor(existing) {
       else patchSeededExercise(existing.id, {
         name: draft.name, bilateral: draft.bilateral, isTimed: draft.isTimed, muscles: draft.muscles,
         defaultRest: draft.defaultRest, defaultWarmupSets: draft.defaultWarmupSets,
-        defaultTargetSec: draft.defaultTargetSec,
+        defaultTargetSec: draft.defaultTargetSec, equipmentWeight: draft.equipmentWeight,
       });
     });
     actions.append(save);
@@ -276,19 +281,19 @@ function muscleSelector(label, selected, onChange) {
   return wrap;
 }
 
-function numField(label, value, onChange, step) {
+function numField(label, value, onChange, step, decimal = false) {
   const wrap = el('div');
   wrap.append(html('div', 'eyebrow', label));
   const input = document.createElement('input');
   input.className = 'input input-center';
   input.type = 'number';
-  input.inputMode = 'numeric';
+  input.inputMode = decimal ? 'decimal' : 'numeric';
   input.step = String(step);
   input.min = '0';
   input.value = String(value);
   input.style.marginTop = '6px';
   input.addEventListener('change', () => {
-    const v = parseInt(input.value, 10);
+    const v = decimal ? parseFloat(input.value) : parseInt(input.value, 10);
     onChange(isFinite(v) ? Math.max(0, v) : 0);
   });
   wrap.append(input);

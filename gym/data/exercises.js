@@ -10,6 +10,9 @@
      muscles   — { primary: [muscleId,...], secondary: [muscleId,...] }
      defaultRest — recommended rest in seconds (compound vs isolation)
      defaultWarmupSets — number of warmup sets the logger pre-fills
+     equipmentWeight — empty-bar weight (kg) for barbell lifts; 20 kg for
+                       a standard Olympic bar. Drives the W1 = bar default
+                       in the warmup ramp. Omit for dumbbell/machine/bodyweight.
 
    To add an exercise: append below and bump SEED_VERSION so existing
    installs notice (optional — additive changes don't require it). To
@@ -25,10 +28,10 @@ const SEED = [
   // ── Chest ─────────────────────────────────────────────────────────
   { id: 'barbell-bench-press', name: 'Barbell Bench Press', bilateral: false,
     muscles: { primary: ['chest'], secondary: ['front-delts', 'triceps'] },
-    defaultRest: 180, defaultWarmupSets: 2 },
+    defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'incline-barbell-bench-press', name: 'Incline Barbell Bench', bilateral: false,
     muscles: { primary: ['chest', 'front-delts'], secondary: ['triceps'] },
-    defaultRest: 180, defaultWarmupSets: 2 },
+    defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'dumbbell-bench-press', name: 'Dumbbell Bench Press', bilateral: true,
     muscles: { primary: ['chest'], secondary: ['front-delts', 'triceps'] },
     defaultRest: 150, defaultWarmupSets: 1 },
@@ -57,13 +60,13 @@ const SEED = [
   // ── Back ──────────────────────────────────────────────────────────
   { id: 'deadlift', name: 'Deadlift', bilateral: false,
     muscles: { primary: ['lower-back', 'glutes', 'hamstrings'], secondary: ['lats', 'upper-back', 'traps', 'forearms'] },
-    defaultRest: 240, defaultWarmupSets: 3 },
+    defaultRest: 240, defaultWarmupSets: 3, equipmentWeight: 20 },
   { id: 'barbell-row', name: 'Barbell Row', bilateral: false,
     muscles: { primary: ['upper-back', 'lats'], secondary: ['biceps', 'rear-delts', 'lower-back'] },
-    defaultRest: 150, defaultWarmupSets: 2 },
+    defaultRest: 150, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'pendlay-row', name: 'Pendlay Row', bilateral: false,
     muscles: { primary: ['upper-back', 'lats'], secondary: ['biceps', 'rear-delts'] },
-    defaultRest: 150, defaultWarmupSets: 2 },
+    defaultRest: 150, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'dumbbell-row', name: 'Dumbbell Row', bilateral: true,
     muscles: { primary: ['lats', 'upper-back'], secondary: ['biceps', 'rear-delts'] },
     defaultRest: 120, defaultWarmupSets: 1 },
@@ -95,7 +98,7 @@ const SEED = [
   // ── Shoulders ─────────────────────────────────────────────────────
   { id: 'overhead-press', name: 'Overhead Press', bilateral: false,
     muscles: { primary: ['front-delts', 'side-delts'], secondary: ['triceps', 'upper-back'] },
-    defaultRest: 180, defaultWarmupSets: 2 },
+    defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'seated-db-press', name: 'Seated DB Press', bilateral: true,
     muscles: { primary: ['front-delts', 'side-delts'], secondary: ['triceps'] },
     defaultRest: 150, defaultWarmupSets: 1 },
@@ -136,7 +139,7 @@ const SEED = [
     defaultRest: 75, defaultWarmupSets: 0 },
   { id: 'close-grip-bench', name: 'Close-Grip Bench Press', bilateral: false,
     muscles: { primary: ['triceps'], secondary: ['chest', 'front-delts'] },
-    defaultRest: 150, defaultWarmupSets: 1 },
+    defaultRest: 150, defaultWarmupSets: 1, equipmentWeight: 20 },
   { id: 'tricep-pushdown', name: 'Tricep Pushdown', bilateral: false,
     muscles: { primary: ['triceps'], secondary: [] },
     defaultRest: 75, defaultWarmupSets: 0 },
@@ -159,16 +162,16 @@ const SEED = [
   // ── Legs ──────────────────────────────────────────────────────────
   { id: 'back-squat', name: 'Back Squat', bilateral: false,
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'lower-back'] },
-    defaultRest: 240, defaultWarmupSets: 3 },
+    defaultRest: 240, defaultWarmupSets: 3, equipmentWeight: 20 },
   { id: 'front-squat', name: 'Front Squat', bilateral: false,
     muscles: { primary: ['quads'], secondary: ['glutes', 'lower-back'] },
-    defaultRest: 210, defaultWarmupSets: 2 },
+    defaultRest: 210, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'romanian-deadlift', name: 'Romanian Deadlift', bilateral: false,
     muscles: { primary: ['hamstrings', 'glutes'], secondary: ['lower-back'] },
-    defaultRest: 180, defaultWarmupSets: 2 },
+    defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'stiff-leg-deadlift', name: 'Stiff-Leg Deadlift', bilateral: false,
     muscles: { primary: ['hamstrings', 'glutes'], secondary: ['lower-back'] },
-    defaultRest: 180, defaultWarmupSets: 2 },
+    defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
   { id: 'leg-press', name: 'Leg Press', bilateral: false,
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
     defaultRest: 150, defaultWarmupSets: 1 },
