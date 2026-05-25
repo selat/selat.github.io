@@ -445,18 +445,37 @@ function buildUpcomingRows(container, entry) {
   // The command card already occupies one slot (warmup or working); show
   // the remainder beneath it, prefilled with the draft weight/reps so the
   // table reads like a single continuous plan.
+  const ex = getExercise(entry.exerciseId);
+  const plannedWarmups = ex?.defaultWarmupSets ?? 0;
+  const loggedWarmups = entry.sets.filter((s) => s.isWarmup).length;
   const plannedWorking = effectivePlannedCount(entry.exerciseId);
   const workingDone = entry.sets.filter((s) => !s.isWarmup).length;
-  const upcomingCount = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
-  for (let i = 0; i < upcomingCount; i++) {
-    const setNum = workingDone + (draftIsWarmup ? 1 : 2) + i;
-    const row = el('div', 'sets-row upcoming');
-    row.append(el('span', 'num', String(setNum)));
-    row.append(el('span', null, formatNumber(draftWeight) + (draftPerSide ? ' ×2' : '')));
-    row.append(el('span', null, String(draftReps)));
-    row.append(el('span', 'check', '○'));
-    container.append(row);
+
+  // Upcoming warmups — only previewed while the card itself is on a warmup.
+  // Toggling WARMUP off means the user is skipping the remaining warmups,
+  // so we don't show ghost rows for sets they won't log.
+  const remainingWarmups = draftIsWarmup
+    ? Math.max(0, plannedWarmups - loggedWarmups - 1)
+    : 0;
+  for (let i = 0; i < remainingWarmups; i++) {
+    const wNum = loggedWarmups + 2 + i;
+    container.append(upcomingRow('W' + wNum));
   }
+
+  const upcomingWorking = Math.max(0, plannedWorking - workingDone - (draftIsWarmup ? 0 : 1));
+  for (let i = 0; i < upcomingWorking; i++) {
+    const setNum = workingDone + (draftIsWarmup ? 1 : 2) + i;
+    container.append(upcomingRow(String(setNum)));
+  }
+}
+
+function upcomingRow(numLabel) {
+  const row = el('div', 'sets-row upcoming');
+  row.append(el('span', 'num', numLabel));
+  row.append(el('span', null, formatNumber(draftWeight) + (draftPerSide ? ' ×2' : '')));
+  row.append(el('span', null, String(draftReps)));
+  row.append(el('span', 'check', '○'));
+  return row;
 }
 
 function plannedWorkingSetCount(exerciseId) {
