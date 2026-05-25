@@ -921,8 +921,6 @@ export function openExercisePicker(onPick) {
    survives PWA backgrounding. Auto-transitions (work → rest on hit,
    rest → next ready on hit) are driven by the rest ticker. */
 
-const TIMED_TARGET_SETS = 3;
-
 function timedView(session, entry) {
   const ex = getExercise(entry.exerciseId);
   const hold = getHoldState();
@@ -930,8 +928,8 @@ function timedView(session, entry) {
 
   const working = entry.sets.filter((s) => !s.isWarmup);
   const setsDone = working.length;
-  const totalSets = Math.max(TIMED_TARGET_SETS, setsDone + (holdHere ? 1 : 0));
-  const isDone = setsDone >= TIMED_TARGET_SETS && !holdHere;
+  const plannedSets = effectivePlannedCount(entry.exerciseId);
+  const isDone = setsDone >= plannedSets && !holdHere;
 
   // Decide the active target seconds for "what's about to / currently happen".
   let activeTargetSec, activeRestSec;
@@ -953,11 +951,14 @@ function timedView(session, entry) {
   wrap.append(timerRing(holdHere, activeTargetSec, isDone));
 
   // Sets table — compact, TARGET / ACTUAL columns
-  wrap.append(timedSetsTable(entry, working, holdHere, activeTargetSec));
+  wrap.append(timedSetsTable(entry, working, holdHere, activeTargetSec, plannedSets));
 
   // Config rows: TARGET HOLD + REST BETWEEN (only meaningful when no
   // timer running, but show always so the user knows the values).
   wrap.append(configRows(activeTargetSec, activeRestSec, holdHere));
+
+  // Extend the plan mid-session (matches the non-timed ADD SET affordance).
+  wrap.append(addSetButton());
 
   // Main action(s)
   wrap.append(timedAction(entry, holdHere, isDone, activeTargetSec, activeRestSec));
@@ -1086,7 +1087,7 @@ function formatHold(sec) {
 
 /* ── Timed sets table ───────────────────────────────────────────── */
 
-function timedSetsTable(entry, working, hold, activeTargetSec) {
+function timedSetsTable(entry, working, hold, activeTargetSec, plannedSets) {
   const wrap = el('div', 'sets-table');
   wrap.style.marginTop = '6px';
 
@@ -1097,7 +1098,7 @@ function timedSetsTable(entry, working, hold, activeTargetSec) {
   head.append(el('span', null, ''));
   wrap.append(head);
 
-  const totalRows = Math.max(TIMED_TARGET_SETS, working.length + (hold ? 1 : 0));
+  const totalRows = Math.max(plannedSets, working.length + (hold ? 1 : 0));
   for (let i = 0; i < totalRows; i++) {
     const done = working[i];
     const isCurrent = !done && hold && i === working.length;
