@@ -1,4 +1,4 @@
-"""Generate REP.LOG PWA icons. Phosphor-green "armed dot" — solid disc
+"""Generate Gym PWA icons. Phosphor-green "armed dot" — solid disc
 inside a thin aim ring — on a near-black background. Mirrors the
 RECORD tab glyph so the app icon and its primary action read as the
 same thing.

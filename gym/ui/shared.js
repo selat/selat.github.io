@@ -28,7 +28,7 @@ export function svg(tag, attrs = {}) {
 }
 
 /* Convenience: build a `<div class="stat-cell">` containing a stat block
-   matching the REP.LOG style — uppercase label + tabular value + unit + sub. */
+   matching the Gym style — uppercase label + tabular value + unit + sub. */
 export function statCell({ label, value, unit, sub, size = 'lg' }) {
   const cell = el('div', 'stat-cell');
   const inner = el('div', 'stat' + (size === 'md' ? ' stat-md' : ''));

@@ -1,6 +1,6 @@
 {
-  "name": "REP.LOG",
-  "short_name": "REP.LOG",
+  "name": "Gym",
+  "short_name": "Gym",
   "description": "Terminal-aesthetic gym tracker — log lifts, monitor recovery, get suggestions. Fully offline.",
   "start_url": "./",
   "scope": "./",
