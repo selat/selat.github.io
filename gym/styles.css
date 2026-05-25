@@ -112,7 +112,7 @@
   gap: 6px;
   padding: 6px 0 4px;
 }
-.cal-day.compact { gap: 3px; padding: 4px 0; }
+.cal-day.compact { gap: 4px; padding: 4px 0; }
 .cal-day.dim { opacity: 0.28; }
 .cal-day-num {
   font-size: var(--t-base);
@@ -120,7 +120,6 @@
   line-height: 1;
   color: var(--ink);
 }
-.cal-day.compact .cal-day-num { font-size: var(--t-xs); }
 .cal-day.today .cal-day-num { color: var(--accent); font-weight: 700; }
 .cal-day.future .cal-day-num { color: var(--ink-muted); }
 .cal-day-dot {
@@ -128,7 +127,6 @@
   height: 6px;
   border-radius: 50%;
 }
-.cal-day.compact .cal-day-dot { width: 5px; height: 5px; }
 .cal-day-dot.session { background: var(--ink); }
 .cal-day-dot.today   { background: var(--accent); }
 .cal-day-dot.empty   { border: 1px solid var(--line-soft); }
