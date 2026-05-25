@@ -516,43 +516,6 @@
 }
 
 
-/* ── Session top banner (REST timer or DONE) ─────────────────────── */
-.session-top {
-  margin-top: 6px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-height: 50px;
-}
-.session-top.rest { background: var(--ink); color: var(--bg); }
-.session-top.done { background: var(--accent); color: var(--accent-fg); }
-.session-top-label {
-  font-size: var(--t-xs);
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-.session-top-value {
-  font-size: var(--t-xl);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-}
-.session-top-aside {
-  font-size: var(--t-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  background: none;
-  border: none;
-  color: inherit;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-
 /* ── Templates list (Record screen) ──────────────────────────────── */
 .template-row {
   padding: 12px 0 13px;

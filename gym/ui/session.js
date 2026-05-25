@@ -2,12 +2,13 @@
 
    Layout (top to bottom):
      • Topbar: split tag (tap → workout overview) · elapsed timer
-     • Banner: REST timer (mid-set) OR DONE summary (just logged)
      • Exercise header: name + idx · prev/next
      • Pill row: equipment hint + LAST summary
      • Sets table: warmups, logged working sets, and one command card
        (steppers for weight/reps) for the next set
-     • LOG SET primary action
+     • Primary action: LOG SET (green), or SKIP REST · countdown (white)
+       while rest is running, or NEXT EXERCISE / REVIEW WORKOUT once
+       all planned sets are logged
      • (Active workout list reached by tapping the split name) — see workout.js
 
    Command-card pattern is the design's "sweaty-thumb" anchor: large
@@ -103,10 +104,6 @@ export function renderSession(container) {
 
   container.append(topbar(session));
 
-  // Top banner — REST timer or DONE summary
-  const rest = getRestState();
-  if (rest) container.append(restBanner(rest));
-
   const body = el('div', 'body-pad');
 
   if (session.entries.length === 0) {
@@ -169,35 +166,20 @@ function formatElapsed(startedAt) {
 }
 
 
-/* ── REST / DONE banner ──────────────────────────────────────────── */
-
-function restBanner(rest) {
-  const done = rest.remainingSec <= 0;
-  const bar = el('div', 'session-top ' + (done ? 'done' : 'rest'));
-  bar.id = 'rest-banner';
-  bar.append(html('span', 'session-top-label', done ? 'READY' : 'REST'));
-  const v = el('span', 'session-top-value tnum');
-  v.id = 'rest-count';
-  v.textContent = done ? '✓' : formatDuration(rest.remainingSec);
-  bar.append(v);
-  const skip = el('button', 'session-top-aside');
-  skip.textContent = done ? 'DISMISS ×' : 'SKIP ▶';
-  skip.addEventListener('click', () => { clearRest(); setKeepScreenAwake(false); });
-  bar.append(skip);
-  return bar;
-}
+/* ── REST countdown (inlined into the primary action) ──────────────
+   The bottom action button doubles as the rest indicator: while rest
+   is running it renders as a white SKIP REST · countdown (see
+   buildPrimaryActionInto). This ticker updates the countdown text and
+   auto-clears the rest state at 0 so the green LOG SET returns
+   instantly — the chime/vibrate/notify is the "ready" cue. */
 
 function startRestTicker() {
   if (restInterval) clearInterval(restInterval);
   restInterval = setInterval(() => {
-    // Tick the rest banner if one is mounted.
-    tickRestBanner();
-    // Tick the hold timer text + auto-transitions if one is mounted.
+    tickRestCountdown();
     tickHoldTextAndTransitions();
-    // Stop the ticker if nothing on screen needs it AND no underlying state.
-    const hasBanner = !!document.getElementById('rest-banner');
-    const hasRing   = !!document.getElementById('ring-count');
-    if (!hasBanner && !hasRing && !getRestState() && !getHoldState()) {
+    const hasRing = !!document.getElementById('ring-count');
+    if (!hasRing && !getRestState() && !getHoldState()) {
       stopRestTicker();
     }
   }, 250);
@@ -215,32 +197,24 @@ function stopRestTicker() {
   stopRingAnimation();
 }
 
-function tickRestBanner() {
-  const banner = document.getElementById('rest-banner');
-  if (!banner) return;
+function tickRestCountdown() {
   const rest = getRestState();
   if (!rest) return;
-  const count = document.getElementById('rest-count');
-  if (!count) return;
   if (rest.remainingSec > 0) {
-    count.textContent = formatDuration(rest.remainingSec);
+    const count = document.getElementById('rest-count');
+    if (count) count.textContent = formatDuration(rest.remainingSec);
     lastRestRemaining = rest.remainingSec;
-  } else {
-    if (lastRestRemaining !== 0) {
-      playChime();
-      vibrate([200, 100, 200]);
-      notify('Rest done', exerciseLabel(rest.exerciseId));
-      setKeepScreenAwake(false);
-      banner.classList.remove('rest');
-      banner.classList.add('done');
-      count.textContent = '✓';
-      const aside = banner.querySelector('.session-top-aside');
-      if (aside) aside.textContent = 'DISMISS ×';
-      const label = banner.querySelector('.session-top-label');
-      if (label) label.textContent = 'READY';
-      lastRestRemaining = 0;
-    }
+    return;
   }
+  if (lastRestRemaining === 0) return;
+  playChime();
+  vibrate([200, 100, 200]);
+  notify('Rest done', exerciseLabel(rest.exerciseId));
+  setKeepScreenAwake(false);
+  lastRestRemaining = 0;
+  // Drop rest state so the primary action re-renders as green LOG SET
+  // (or stays as green NEXT EXERCISE if the plan is already done).
+  clearRest();
 }
 
 let lastHoldRemaining = null;
@@ -780,6 +754,23 @@ function buildPrimaryActionInto(wrap, session, entry) {
       });
     }
     wrap.append(advance);
+    return;
+  }
+
+  // Mid-rest: swap LOG SET for a white SKIP REST button with the live
+  // countdown. Prevents tap-logging a working set before the rest is
+  // over, and frees the vertical space the old top banner used. The
+  // tick driver updates `#rest-count` in place; reaching 0 auto-clears
+  // rest, which re-renders this button as the green LOG SET below.
+  const rest = getRestState();
+  if (rest && rest.remainingSec > 0) {
+    const skip = el('button', 'btn-primary');
+    skip.style.justifyContent = 'space-between';
+    skip.style.background = 'var(--ink)';
+    skip.style.color = 'var(--bg)';
+    skip.innerHTML = `<span>SKIP REST</span><span class="tnum" id="rest-count" style="font-weight:800; letter-spacing:-0.02em;">${formatDuration(rest.remainingSec)}</span>`;
+    skip.addEventListener('click', () => { clearRest(); setKeepScreenAwake(false); });
+    wrap.append(skip);
     return;
   }
 
