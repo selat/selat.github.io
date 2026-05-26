@@ -27,6 +27,7 @@ export const MUSCLES = {
   glutes:      { label: 'Glutes',        region: 'legs' },
   calves:      { label: 'Calves',        region: 'legs' },
   adductors:   { label: 'Adductors',     region: 'legs' },
+  abductors:   { label: 'Abductors',     region: 'legs' },
 
   'lower-back':{ label: 'Lower Back',    region: 'core' },
   abs:         { label: 'Abs',           region: 'core' },

@@ -22,7 +22,7 @@
 
 import { mutate, getDb } from './storage.js';
 
-export const SEED_VERSION = 1;
+export const SEED_VERSION = 2;
 
 const SEED = [
   // ── Chest ─────────────────────────────────────────────────────────
@@ -175,9 +175,15 @@ const SEED = [
   { id: 'leg-press', name: 'Leg Press', bilateral: false,
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
     defaultRest: 150, defaultWarmupSets: 1 },
+  { id: 'dumbbell-squat', name: 'Dumbbell Squat', bilateral: true,
+    muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
+    defaultRest: 150, defaultWarmupSets: 1 },
   { id: 'walking-lunge', name: 'Walking Lunge', bilateral: true,
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
     defaultRest: 120, defaultWarmupSets: 0 },
+  { id: 'dumbbell-lunge', name: 'Dumbbell Lunge', bilateral: true,
+    muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
+    defaultRest: 120, defaultWarmupSets: 1 },
   { id: 'bulgarian-split-squat', name: 'Bulgarian Split Squat', bilateral: true,
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings'] },
     defaultRest: 120, defaultWarmupSets: 1 },
@@ -198,6 +204,9 @@ const SEED = [
     defaultRest: 75, defaultWarmupSets: 0 },
   { id: 'hip-adductor-machine', name: 'Hip Adductor Machine', bilateral: false,
     muscles: { primary: ['adductors'], secondary: [] },
+    defaultRest: 60, defaultWarmupSets: 0 },
+  { id: 'hip-abductor-machine', name: 'Hip Abductor Machine', bilateral: false,
+    muscles: { primary: ['abductors'], secondary: [] },
     defaultRest: 60, defaultWarmupSets: 0 },
 
   // ── Core ──────────────────────────────────────────────────────────
