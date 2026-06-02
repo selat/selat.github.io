@@ -252,6 +252,79 @@
     </div>
   </template>
 
+  <!-- History screen (see ui/history.js renderHistory). Multi-child fragment. -->
+  <template id="tpl-history">
+    <div class="topbar">
+      <div class="topbar-main">
+        <h1 class="title">HISTORY</h1>
+        <span class="topbar-sub">PAST SESSIONS</span>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="divider"><span>── LAST 4 WEEKS</span><span class="divider-line"></span></div>
+      <div class="stat-grid cols-3" data-field="agg"></div>
+    </div>
+    <div class="history-list" data-field="list"></div>
+  </template>
+
+  <!-- One month header in the history timeline; cloned per group. -->
+  <template id="tpl-history-month">
+    <div class="history-month-header">
+      <span class="history-month-name"></span>
+      <span class="dim history-month-count"></span>
+    </div>
+  </template>
+
+  <!-- One past-session row; cloned per session. -->
+  <template id="tpl-session-row">
+    <button type="button" class="session-row">
+      <div class="session-row-date"></div>
+      <div class="session-row-main">
+        <span class="session-row-muscles"></span>
+        <span class="session-row-chevron">›</span>
+      </div>
+      <div class="session-row-meta">
+        <span data-field="vol"></span>
+        <span class="sep">·</span>
+        <span data-field="time"></span>
+        <span class="sep" data-field="prsep">·</span>
+        <span class="pr" data-field="pr"></span>
+      </div>
+    </button>
+  </template>
+
+  <!-- Past-session detail screen (sub-route #session/<id>). Multi-child. -->
+  <template id="tpl-past-session">
+    <div class="topbar detail-topbar">
+      <button type="button" class="btn-icon lg" data-act="close" aria-label="back to history">×</button>
+      <div class="detail-topbar-title">
+        <div class="eyebrow" data-field="completed"></div>
+        <div class="title" data-field="split"></div>
+      </div>
+      <div class="detail-topbar-right">
+        <div class="eyebrow">DURATION</div>
+        <div class="tnum detail-topbar-value" data-field="dur"></div>
+      </div>
+    </div>
+
+    <div class="detail-progress">
+      <div class="row-baseline detail-progress-label">
+        <span><strong data-field="complete"></strong></span>
+        <span><span data-field="dvol"></span><span data-field="dprsep"> · </span><span class="pr" data-field="dpr"></span></span>
+      </div>
+      <div class="progress-strip"><div class="progress-strip-fill is-complete"></div></div>
+    </div>
+
+    <div class="divider"><span>── PLAN</span><span class="divider-line"></span></div>
+
+    <div class="detail-plan" data-field="plan"></div>
+
+    <div class="detail-footer">
+      <button type="button" class="btn-primary" data-act="repeat"><span>↻ REPEAT WORKOUT</span><span>→</span></button>
+      <button type="button" class="btn-secondary danger block" data-act="delete">⌫ DELETE WORKOUT</button>
+    </div>
+  </template>
+
   <!-- Settings sheet (see ui/settings.js openSettings). -->
   <template id="tpl-settings">
     <div class="settings">

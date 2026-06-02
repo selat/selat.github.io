@@ -923,6 +923,14 @@
 .settings-done { margin-top: 14px; }
 
 
+/* ── History screen ──────────────────────────────────────────────── */
+.history-list { flex: 1; overflow: auto; }
+.history-group { padding: 0 16px; }
+.history-empty { padding: 4rem 1rem; }
+.detail-plan { flex: 1; }
+.progress-strip-fill.is-complete { width: 100%; }
+
+
 /* ── Workout overview (ADD EXERCISE row) ─────────────────────────── */
 .workout-plan { flex: 1; }
 .workout-add { padding: 12px 16px; }

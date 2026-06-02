@@ -9,31 +9,26 @@
 
 import { listSessions, getSession, deleteSession, exerciseLabel, startSession } from '../data/sessions.js';
 import { sessionMusclesLabel, sessionSplitTag, sessionVolume, sessionDurationSec, sessionPRCount, lastNWeeks } from '../data/derived.js';
-import { el, html, divider, formatWeight, formatTrainTime, formatShortDate, formatMonth, formatDurationPad } from './shared.js';
+import { el, statCell, formatWeight, formatTrainTime, formatShortDate, formatMonth, formatDurationPad } from './shared.js';
 import { go } from '../app.js';
 
 
 export function renderHistory(container) {
   container.replaceChildren();
 
-  // Topbar
-  const tb = el('div', 'topbar');
-  const main = el('div', 'topbar-main');
-  main.append(html('h1', 'title', 'HISTORY'));
-  main.append(html('span', 'topbar-sub', 'PAST SESSIONS'));
-  tb.append(main);
-  container.append(tb);
+  // Markup lives in #tpl-history (multi-child fragment) in index.html.
+  const frag = document.getElementById('tpl-history').content.cloneNode(true);
 
   const sessions = listSessions().filter((s) => s.endedAt != null);
 
   // Aggregate strip — last 4 weeks
-  container.append(aggregateStrip());
+  fillAggregate(frag.querySelector('[data-field="agg"]'));
+
+  const list = frag.querySelector('[data-field="list"]');
 
   if (sessions.length === 0) {
-    const empty = el('div', 'lib-empty');
-    empty.style.padding = '4rem 1rem';
-    empty.textContent = 'NO SESSIONS YET';
-    container.append(empty);
+    list.append(el('div', 'lib-empty history-empty', 'NO SESSIONS YET'));
+    container.append(frag);
     return;
   }
 
@@ -46,54 +41,31 @@ export function renderHistory(container) {
     else grouped.push({ month: m, items: [s] });
   }
 
-  const list = el('div');
-  list.style.flex = '1';
-  list.style.overflow = 'auto';
-
   grouped.forEach((g, gi) => {
-    const monthHeader = el('div', 'history-month-header' + (gi === 0 ? ' first' : ''));
-    monthHeader.append(html('span', null, `── ${g.month}`));
-    monthHeader.append(html('span', 'dim', `${g.items.length} SESSIONS`));
-    list.append(monthHeader);
+    const header = document.getElementById('tpl-history-month')
+      .content.firstElementChild.cloneNode(true);
+    if (gi === 0) header.classList.add('first');
+    header.querySelector('.history-month-name').textContent = `── ${g.month}`;
+    header.querySelector('.history-month-count').textContent = `${g.items.length} SESSIONS`;
+    list.append(header);
 
-    const wrap = el('div');
-    wrap.style.padding = '0 16px';
+    const wrap = el('div', 'history-group');
     for (const s of g.items) wrap.append(sessionRow(s));
     list.append(wrap);
   });
 
-  container.append(list);
+  container.append(frag);
 }
 
 
-function aggregateStrip() {
+function fillAggregate(grid) {
   const weeks = lastNWeeks(4);
   let sessions = 0, vol = 0, durationSec = 0;
   for (const w of weeks) { sessions += w.sessions; vol += w.volume; durationSec += w.durationSec; }
 
-  const wrap = el('div', 'body-pad');
-  wrap.append(divider('LAST 4 WEEKS'));
-  const grid = el('div', 'stat-grid cols-3');
-  grid.append(statCellShort('VOLUME', formatKilo(vol), 'kg'));
-  grid.append(statCellShort('SESSIONS', String(sessions)));
-  grid.append(statCellShort('TRAIN TIME', Math.round(durationSec / 3600) + 'h'));
-  wrap.append(grid);
-  return wrap;
-}
-
-function statCellShort(label, value, unit) {
-  const cell = el('div', 'stat-cell');
-  const inner = el('div', 'stat stat-md');
-  inner.append(el('span', 'stat-label', label));
-  const row = el('div');
-  row.style.display = 'flex';
-  row.style.alignItems = 'baseline';
-  row.style.gap = '3px';
-  row.append(el('span', 'stat-value', value));
-  if (unit) row.append(el('span', 'stat-unit', unit));
-  inner.append(row);
-  cell.append(inner);
-  return cell;
+  grid.append(statCell({ label: 'VOLUME', value: formatKilo(vol), unit: 'kg', size: 'md' }));
+  grid.append(statCell({ label: 'SESSIONS', value: String(sessions), size: 'md' }));
+  grid.append(statCell({ label: 'TRAIN TIME', value: Math.round(durationSec / 3600) + 'h', size: 'md' }));
 }
 
 function formatKilo(v) {
@@ -106,23 +78,19 @@ function formatKilo(v) {
 /* ── Session row (also used on Home, duplicated for variation here) ── */
 
 function sessionRow(s) {
-  const row = el('button', 'session-row');
-  row.type = 'button';
-  row.append(el('div', 'session-row-date', formatShortDate(s.startedAt)));
-  const main = el('div', 'session-row-main');
-  main.append(el('span', 'session-row-muscles', sessionMusclesLabel(s)));
-  main.append(el('span', 'session-row-chevron', '›'));
-  row.append(main);
-  const meta = el('div', 'session-row-meta');
-  meta.append(el('span', null, formatWeight(sessionVolume(s))));
-  meta.append(el('span', 'sep', '·'));
-  meta.append(el('span', null, formatTrainTime(sessionDurationSec(s))));
+  const row = document.getElementById('tpl-session-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('.session-row-date').textContent = formatShortDate(s.startedAt);
+  row.querySelector('.session-row-muscles').textContent = sessionMusclesLabel(s);
+  row.querySelector('[data-field="vol"]').textContent = formatWeight(sessionVolume(s));
+  row.querySelector('[data-field="time"]').textContent = formatTrainTime(sessionDurationSec(s));
   const prs = sessionPRCount(s);
   if (prs > 0) {
-    meta.append(el('span', 'sep', '·'));
-    meta.append(el('span', 'pr', `+${prs} PR`));
+    row.querySelector('[data-field="pr"]').textContent = `+${prs} PR`;
+  } else {
+    row.querySelector('[data-field="prsep"]').remove();
+    row.querySelector('[data-field="pr"]').remove();
   }
-  row.append(meta);
   row.addEventListener('click', () => go('session/' + s.id));
   return row;
 }
@@ -135,94 +103,57 @@ export function renderPastSession(container, id) {
   const session = getSession(id);
   if (!session) { go('history'); return; }
 
+  // Markup lives in #tpl-past-session (multi-child fragment) in index.html.
+  const frag = document.getElementById('tpl-past-session').content.cloneNode(true);
+
   // Top bar — close + workout name + completed date + duration
-  const tb = el('div', 'topbar detail-topbar');
-
-  const close = el('button', 'btn-icon lg');
-  close.textContent = '×';
-  close.setAttribute('aria-label', 'back to history');
-  close.addEventListener('click', () => go('history'));
-  tb.append(close);
-
-  const titleBox = el('div', 'detail-topbar-title');
+  frag.querySelector('[data-act="close"]').addEventListener('click', () => go('history'));
   const completedLabel = 'COMPLETED · ' + new Date(session.startedAt).toLocaleDateString([], {
     weekday: 'short', day: 'numeric', month: 'short',
   }).toUpperCase();
-  titleBox.append(html('div', 'eyebrow', completedLabel));
-  titleBox.append(html('div', 'title', sessionSplitTag(session)));
-  tb.append(titleBox);
-
-  const right = el('div', 'detail-topbar-right');
-  right.append(html('div', 'eyebrow', 'DURATION'));
-  const dur = el('div', 'tnum detail-topbar-value');
-  dur.textContent = formatDurationPad(sessionDurationSec(session));
-  right.append(dur);
-  tb.append(right);
-  container.append(tb);
+  frag.querySelector('[data-field="completed"]').textContent = completedLabel;
+  frag.querySelector('[data-field="split"]').textContent = sessionSplitTag(session);
+  frag.querySelector('[data-field="dur"]').textContent = formatDurationPad(sessionDurationSec(session));
 
   // Progress strip — all complete
   const total = session.entries.length;
-  const prog = el('div', 'detail-progress');
-  const lbl = el('div', 'row-baseline detail-progress-label');
-  lbl.append(html('span', null, `<strong>${total} / ${total} COMPLETE</strong>`));
+  frag.querySelector('[data-field="complete"]').textContent = `${total} / ${total} COMPLETE`;
   const prs = sessionPRCount(session);
-  lbl.append(html('span', null,
-    `${formatWeight(sessionVolume(session))}` + (prs ? ` · <span class="pr">+${prs} PR</span>` : '')));
-  prog.append(lbl);
-  const bar = el('div', 'progress-strip');
-  const fill = el('div', 'progress-strip-fill');
-  fill.style.width = '100%';
-  bar.append(fill);
-  prog.append(bar);
-  container.append(prog);
+  frag.querySelector('[data-field="dvol"]').textContent = formatWeight(sessionVolume(session));
+  if (prs > 0) {
+    frag.querySelector('[data-field="dpr"]').textContent = `+${prs} PR`;
+  } else {
+    frag.querySelector('[data-field="dprsep"]').remove();
+    frag.querySelector('[data-field="dpr"]').remove();
+  }
 
-  container.append(divider('PLAN'));
-
-  // Per-exercise rows
-  const planList = el('div');
-  planList.style.flex = '1';
-  session.entries.forEach((entry, idx) => {
-    planList.append(pastEntryRow(entry, idx));
-  });
-  container.append(planList);
+  // Per-exercise rows (reuse the active-session plan-row template)
+  const plan = frag.querySelector('[data-field="plan"]');
+  session.entries.forEach((entry) => plan.append(pastEntryRow(entry)));
 
   // Repeat / Delete footer
-  const footer = el('div', 'detail-footer');
-
-  const repeat = el('button', 'btn-primary');
-  repeat.innerHTML = '<span>↻ REPEAT WORKOUT</span><span>→</span>';
-  repeat.addEventListener('click', () => {
+  frag.querySelector('[data-act="repeat"]').addEventListener('click', () => {
     const exerciseIds = session.entries.map((e) => e.exerciseId);
     startSession(exerciseIds);
     go('record');
   });
-  footer.append(repeat);
-
-  const del = el('button', 'btn-secondary danger block');
-  del.textContent = '⌫ DELETE WORKOUT';
-  del.addEventListener('click', () => {
+  frag.querySelector('[data-act="delete"]').addEventListener('click', () => {
     if (!confirm('Delete this session permanently?')) return;
     deleteSession(session.id);
     go('history');
   });
-  footer.append(del);
 
-  container.append(footer);
+  container.append(frag);
 }
 
-function pastEntryRow(entry, idx) {
+function pastEntryRow(entry) {
   const working = entry.sets.filter((s) => !s.isWarmup);
-  const row = el('div', 'plan-row done');
-  const marker = el('span', 'plan-row-marker');
-  marker.textContent = '✓';
-  row.append(marker);
-
-  const text = el('div', 'plan-row-text');
-  text.append(html('span', 'plan-row-name', exerciseLabel(entry.exerciseId)));
-  text.append(html('div', 'plan-row-result', formatResult(working)));
-  row.append(text);
-
-  row.append(html('span', 'plan-row-chev', '›'));
+  const row = document.getElementById('tpl-plan-row')
+    .content.firstElementChild.cloneNode(true);
+  row.classList.add('done');
+  row.querySelector('.plan-row-marker').textContent = '✓';
+  row.querySelector('.plan-row-name').textContent = exerciseLabel(entry.exerciseId);
+  row.querySelector('.plan-row-result').textContent = formatResult(working);
   return row;
 }
 
