@@ -923,6 +923,38 @@
 .settings-done { margin-top: 14px; }
 
 
+/* ── Library screen ──────────────────────────────────────────────── */
+.lib-list-spaced { margin-top: 14px; }
+.lib-add { margin-top: 12px; }
+
+/* Exercise editor sheet */
+.ex-ed-name-label { margin-top: 12px; }
+.ex-ed-name { margin-top: 4px; }
+.ex-ed-defaults { margin-top: 12px; gap: 10px; }
+.ex-ed-actions { margin-top: 16px; }
+.ex-ed-muscles { margin-top: 12px; }
+.ex-ed-region { margin-top: 8px; }
+.ex-ed-region-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+/* Exercise detail screen */
+.topbar-link {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: var(--t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+.detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.detail-stats { margin-top: 12px; }
+.chart-card-spaced { margin-top: 12px; }
+.chart-svg { margin-top: 12px; }
+
+
 /* ── History screen ──────────────────────────────────────────────── */
 .history-list { flex: 1; overflow: auto; }
 .history-group { padding: 0 16px; }

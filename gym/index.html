@@ -325,6 +325,142 @@
     </div>
   </template>
 
+  <!-- Library screen (see ui/library.js renderLibrary). Multi-child fragment. -->
+  <template id="tpl-library">
+    <div class="topbar">
+      <div class="topbar-main">
+        <h1 class="title">LIBRARY</h1>
+        <span class="topbar-sub" data-field="count"></span>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="lib-search">
+        <span class="lib-search-icon">⌕</span>
+        <input type="search" placeholder="search…" data-field="search">
+      </div>
+      <div class="lib-filters" data-field="filters"></div>
+      <div class="lib-list lib-list-spaced" data-field="list"></div>
+      <button type="button" class="btn-add lib-add" data-act="add">+ CREATE CUSTOM EXERCISE</button>
+    </div>
+  </template>
+
+  <!-- Generic toggle pill (filter chips, muscle selectors); cloned per chip. -->
+  <template id="tpl-toggle-pill">
+    <button type="button" class="pill toggle"></button>
+  </template>
+
+  <!-- One library list row; cloned per exercise. -->
+  <template id="tpl-lib-row">
+    <button type="button" class="lib-row">
+      <div class="lib-row-head">
+        <div class="lib-row-name"><span class="num"></span> <span class="lib-row-exname"></span></div>
+        <span class="lib-row-e1rm"></span>
+      </div>
+      <div class="lib-row-tags"></div>
+    </button>
+  </template>
+
+  <!-- Exercise editor sheet (see ui/library.js openExerciseEditor). -->
+  <template id="tpl-exercise-editor">
+    <div class="exercise-editor">
+      <h2 class="eyebrow" data-field="title"></h2>
+      <div class="eyebrow ex-ed-name-label">NAME</div>
+      <input class="input ex-ed-name" placeholder="e.g. Cable Pullover" data-field="name">
+      <div data-field="toggles"></div>
+      <div data-field="primary"></div>
+      <div data-field="secondary"></div>
+      <div class="ex-ed-defaults" data-field="defaults"></div>
+      <div class="settings-actions ex-ed-actions" data-field="actions"></div>
+    </div>
+  </template>
+
+  <!-- Settings-style toggle row (label + hint + switch); cloned per toggle. -->
+  <template id="tpl-toggle-row">
+    <div class="settings-row">
+      <div class="settings-row-label">
+        <strong data-field="label"></strong><small data-field="hint"></small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" data-field="cb">
+        <span class="switch-track"></span>
+        <span class="switch-thumb"></span>
+      </label>
+    </div>
+  </template>
+
+  <!-- Muscle selector group (label + region groups appended). -->
+  <template id="tpl-muscle-selector">
+    <div class="ex-ed-muscles">
+      <div class="eyebrow" data-field="label"></div>
+    </div>
+  </template>
+
+  <!-- One region within a muscle selector; cloned per region. -->
+  <template id="tpl-muscle-region">
+    <div class="ex-ed-region">
+      <div class="eyebrow dim" data-field="region-label"></div>
+      <div class="ex-ed-region-grid" data-field="pills"></div>
+    </div>
+  </template>
+
+  <!-- Labelled numeric field (eyebrow + centered number input); cloned per field. -->
+  <template id="tpl-num-field">
+    <label class="num-field">
+      <span class="eyebrow" data-field="label"></span>
+      <input class="input input-center" type="number" min="0" data-field="input">
+    </label>
+  </template>
+
+  <!-- Exercise detail screen (sub-route #exercise/<id>). Multi-child. -->
+  <template id="tpl-exercise-detail">
+    <div class="topbar with-meta">
+      <div class="topbar-meta">
+        <button type="button" class="topbar-link" data-act="back">‹ LIBRARY</button>
+        <button type="button" class="topbar-link" data-act="edit">EDIT</button>
+      </div>
+      <div class="topbar-main">
+        <h1 class="title" data-field="name"></h1>
+        <span class="topbar-sub" data-field="hist"></span>
+      </div>
+    </div>
+    <div class="body-pad">
+      <div class="detail-tags" data-field="tags"></div>
+      <div class="stat-grid cols-2 two-rows detail-stats" data-field="stats"></div>
+      <div class="divider"><span>── EST. 1RM · LAST 16W</span><span class="divider-line"></span></div>
+      <div data-field="chart"></div>
+      <div class="divider"><span>── HISTORY · LOG</span><span class="divider-line"></span></div>
+      <div data-field="log"></div>
+    </div>
+  </template>
+
+  <!-- e1RM chart card shell; the SVG is injected (computed geometry). -->
+  <template id="tpl-chart-card">
+    <div class="chart-card chart-card-spaced">
+      <div class="now-callout" data-field="now"></div>
+      <div class="y-axis">
+        <span data-field="ymax"></span>
+        <span data-field="ymid"></span>
+        <span data-field="ymin"></span>
+      </div>
+      <div class="chart-svg" data-field="svg"></div>
+      <div class="x-axis">
+        <span>−16W</span>
+        <span>−8W</span>
+        <span>NOW</span>
+      </div>
+    </div>
+  </template>
+
+  <!-- One row of the exercise history log; cloned per session. -->
+  <template id="tpl-history-log-row">
+    <div class="detail-log-row">
+      <span class="date" data-field="date"></span>
+      <span class="sets" data-field="sets"></span>
+      <span class="e1rm" data-field="e1rm"></span>
+      <span data-field="pr"></span>
+    </div>
+  </template>
+
   <!-- Settings sheet (see ui/settings.js openSettings). -->
   <template id="tpl-settings">
     <div class="settings">

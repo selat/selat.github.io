@@ -1,13 +1,17 @@
 /* LIBRARY screen — browse, search, filter, add, and edit exercises.
    Also hosts EXERCISE DETAIL (sub-route #exercise/<id>): tag row, stat
-   grid, 16-week e1RM chart, and a per-session history log. */
+   grid, 16-week e1RM chart, and a per-session history log.
+
+   Screen/sheet/row markup lives in #tpl-library, #tpl-lib-row,
+   #tpl-exercise-editor, #tpl-exercise-detail, #tpl-chart-card, etc. in
+   index.html; these functions clone + fill them. */
 
 import { listExercises, getExercise, upsertCustomExercise, patchSeededExercise, resetSeededExercise, deleteCustomExercise } from '../data/exercises.js';
 import { MUSCLES, REGIONS } from '../data/muscles.js';
 import { exerciseHistory, lastSetSummary, bestE1RM, sessionVolume, epley } from '../data/derived.js';
 import { listSessions } from '../data/sessions.js';
 import { openSheet, go } from '../app.js';
-import { el, html, divider, pill, formatWeight, formatShortDate, statCell } from './shared.js';
+import { el, pill, formatShortDate, statCell } from './shared.js';
 
 let searchText = '';
 let activeRegion = null;
@@ -16,51 +20,26 @@ let activeRegion = null;
 export function renderLibrary(container) {
   container.replaceChildren();
 
-  // Topbar
-  const tb = el('div', 'topbar');
-  const main = el('div', 'topbar-main');
-  main.append(html('h1', 'title', 'LIBRARY'));
-  const right = el('span', 'topbar-sub');
-  right.textContent = listExercises().length + ' EXERCISES';
-  main.append(right);
-  tb.append(main);
-  container.append(tb);
+  // Markup lives in #tpl-library (multi-child fragment) in index.html.
+  const frag = document.getElementById('tpl-library').content.cloneNode(true);
 
-  const body = el('div', 'body-pad');
+  frag.querySelector('[data-field="count"]').textContent = listExercises().length + ' EXERCISES';
 
-  // Search
-  const searchWrap = el('div', 'lib-search');
-  const searchIcon = el('span', 'lib-search-icon', '⌕');
-  searchWrap.append(searchIcon);
-  const search = document.createElement('input');
-  search.type = 'search';
-  search.placeholder = 'search…';
+  const search = frag.querySelector('[data-field="search"]');
   search.value = searchText;
   search.addEventListener('input', () => { searchText = search.value; refresh(); });
-  searchWrap.append(search);
-  body.append(searchWrap);
 
-  // Filter chips
-  const filters = el('div', 'lib-filters');
+  const filters = frag.querySelector('[data-field="filters"]');
   filters.append(filterChip('ALL', null));
   for (const [rid, info] of Object.entries(REGIONS)) {
     filters.append(filterChip(info.label.toUpperCase(), rid));
   }
-  body.append(filters);
 
-  // List container
-  const list = el('div', 'lib-list section-mt');
-  list.style.marginTop = '14px';
-  body.append(list);
+  const list = frag.querySelector('[data-field="list"]');
 
-  // Add custom
-  const addBtn = el('button', 'btn-add section-mt');
-  addBtn.style.marginTop = '12px';
-  addBtn.textContent = '+ CREATE CUSTOM EXERCISE';
-  addBtn.addEventListener('click', () => openExerciseEditor(null));
-  body.append(addBtn);
+  frag.querySelector('[data-act="add"]').addEventListener('click', () => openExerciseEditor(null));
 
-  container.append(body);
+  container.append(frag);
 
   function refresh() {
     const q = searchText.trim().toLowerCase();
@@ -76,16 +55,17 @@ export function renderLibrary(container) {
     });
     list.replaceChildren();
     if (filtered.length === 0) {
-      list.append(html('div', 'lib-empty', 'NO EXERCISES MATCH'));
+      list.append(el('div', 'lib-empty', 'NO EXERCISES MATCH'));
       return;
     }
     filtered.forEach((ex, i) => list.append(libRow(ex, i)));
   }
 
   function filterChip(label, regionId) {
-    const chip = el('button', 'pill toggle' + (activeRegion === regionId ? ' on' : ''));
-    chip.type = 'button';
+    const chip = document.getElementById('tpl-toggle-pill')
+      .content.firstElementChild.cloneNode(true);
     chip.textContent = label;
+    if (activeRegion === regionId) chip.classList.add('on');
     chip.addEventListener('click', () => {
       activeRegion = regionId;
       for (const c of filters.children) c.classList.remove('on');
@@ -100,27 +80,20 @@ export function renderLibrary(container) {
 
 
 function libRow(ex, i) {
-  const row = el('button', 'lib-row');
-  row.type = 'button';
-  const head = el('div', 'lib-row-head');
-  const name = el('div', 'lib-row-name');
-  name.innerHTML = `<span class="num">${String(i + 1).padStart(2, '0')} ·</span> ${ex.name}`;
-  head.append(name);
+  const row = document.getElementById('tpl-lib-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('.num').textContent = `${String(i + 1).padStart(2, '0')} ·`;
+  row.querySelector('.lib-row-exname').textContent = ex.name;
   const e1rm = bestE1RM(ex.id);
-  head.append(el('span', 'lib-row-e1rm', e1rm > 0 ? `${Math.round(e1rm)}kg` : '—'));
-  row.append(head);
+  row.querySelector('.lib-row-e1rm').textContent = e1rm > 0 ? `${Math.round(e1rm)}kg` : '—';
 
-  const tags = el('div', 'lib-row-tags');
+  const tags = row.querySelector('.lib-row-tags');
   const primary = ex.muscles.primary[0];
   if (primary) tags.append(pill(primary.toUpperCase().replace(/-/g, ' '), 'default'));
   if (ex.bilateral) tags.append(pill('PER ARM', 'soft'));
   if (ex.custom) tags.append(pill('CUSTOM', 'soft'));
   const last = lastSetSummary(ex.id);
-  if (last) {
-    const lastSpan = el('span', 'lib-row-last', 'LAST · ' + last.toUpperCase());
-    tags.append(lastSpan);
-  }
-  row.append(tags);
+  if (last) tags.append(el('span', 'lib-row-last', 'LAST · ' + last.toUpperCase()));
 
   row.addEventListener('click', () => go('exercise/' + ex.id));
   return row;
@@ -149,40 +122,34 @@ function openExerciseEditor(existing) {
       defaultRest: 120, defaultWarmupSets: 0, defaultTargetSec: 60, equipmentWeight: 0,
     };
 
-    const root = document.createElement('div');
-    root.append(html('h2', 'eyebrow', isNew ? 'NEW EXERCISE' : 'EDIT EXERCISE'));
+    const root = document.getElementById('tpl-exercise-editor')
+      .content.firstElementChild.cloneNode(true);
+    root.querySelector('[data-field="title"]').textContent = isNew ? 'NEW EXERCISE' : 'EDIT EXERCISE';
 
     // Name
-    const nameLabel = html('div', 'eyebrow', 'NAME');
-    nameLabel.style.marginTop = '12px';
-    root.append(nameLabel);
-    const nameInput = document.createElement('input');
-    nameInput.className = 'input';
+    const nameInput = root.querySelector('[data-field="name"]');
     nameInput.value = draft.name;
-    nameInput.placeholder = 'e.g. Cable Pullover';
-    nameInput.style.marginTop = '4px';
     nameInput.addEventListener('input', () => { draft.name = nameInput.value; });
-    root.append(nameInput);
 
-    // Per-side toggle
-    root.append(toggleRow('PER-SIDE WEIGHT', 'Dumbbells, single-arm machines etc.', draft.bilateral,
+    // Per-side + isometric/timed toggles
+    const toggles = root.querySelector('[data-field="toggles"]');
+    toggles.append(toggleRow('PER-SIDE WEIGHT', 'Dumbbells, single-arm machines etc.', draft.bilateral,
       (v) => { draft.bilateral = v; }));
-
-    // Isometric / timed toggle
-    root.append(toggleRow('ISOMETRIC · TIMED', 'Held for time (plank, hang). Logger uses a countdown ring instead of weight/reps.', draft.isTimed,
+    toggles.append(toggleRow('ISOMETRIC · TIMED', 'Held for time (plank, hang). Logger uses a countdown ring instead of weight/reps.', draft.isTimed,
       (v) => { draft.isTimed = v; }));
 
-    // Primary muscles
-    root.append(muscleSelector('PRIMARY MUSCLES', draft.muscles.primary, (next) => { draft.muscles.primary = next; }));
-    root.append(muscleSelector('SECONDARY MUSCLES', draft.muscles.secondary, (next) => { draft.muscles.secondary = next; }));
+    // Primary / secondary muscles
+    root.querySelector('[data-field="primary"]').replaceWith(
+      muscleSelector('PRIMARY MUSCLES', draft.muscles.primary, (next) => { draft.muscles.primary = next; }));
+    root.querySelector('[data-field="secondary"]').replaceWith(
+      muscleSelector('SECONDARY MUSCLES', draft.muscles.secondary, (next) => { draft.muscles.secondary = next; }));
 
     // Rest + warmup + bar weight (or target hold for timed).
     // Bar weight only meaningfully drives the warmup ramp on barbell lifts
     // — 0 (default) means "no bar", which the session-time logic treats as
     // a pure-percentage ramp.
-    const defaults = el('div', draft.isTimed ? 'grid-2' : 'grid-3');
-    defaults.style.gap = '10px';
-    defaults.style.marginTop = '12px';
+    const defaults = root.querySelector('[data-field="defaults"]');
+    defaults.classList.add(draft.isTimed ? 'grid-2' : 'grid-3');
     defaults.append(numField('REST (SEC)', draft.defaultRest, (v) => { draft.defaultRest = v; }, 15));
     if (draft.isTimed) {
       defaults.append(numField('TARGET HOLD (SEC)', draft.defaultTargetSec, (v) => { draft.defaultTargetSec = v; }, 15));
@@ -190,10 +157,9 @@ function openExerciseEditor(existing) {
       defaults.append(numField('WARMUP SETS', draft.defaultWarmupSets, (v) => { draft.defaultWarmupSets = v; }, 1));
       defaults.append(numField('BAR (KG)', draft.equipmentWeight, (v) => { draft.equipmentWeight = v; }, 2.5, true));
     }
-    root.append(defaults);
 
-    const actions = el('div', 'settings-actions section-mt');
-    actions.style.marginTop = '16px';
+    // Actions: optional RESET (seeded) / DELETE (custom), then ADD/SAVE.
+    const actions = root.querySelector('[data-field="actions"]');
     if (existing && !existing.custom) {
       const reset = el('button', 'btn-secondary');
       reset.textContent = 'RESET';
@@ -227,47 +193,39 @@ function openExerciseEditor(existing) {
       });
     });
     actions.append(save);
-    root.append(actions);
     return root;
   });
 }
 
 function toggleRow(label, hint, initial, onChange) {
-  const row = el('div', 'settings-row');
-  const lbl = el('div', 'settings-row-label');
-  lbl.innerHTML = `<strong>${label}</strong>` + (hint ? `<small>${hint}</small>` : '');
-  row.append(lbl);
-  const sw = document.createElement('label');
-  sw.className = 'switch';
-  const cb = document.createElement('input');
-  cb.type = 'checkbox';
+  const row = document.getElementById('tpl-toggle-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('[data-field="label"]').textContent = label;
+  const small = row.querySelector('[data-field="hint"]');
+  if (hint) small.textContent = hint; else small.remove();
+  const cb = row.querySelector('[data-field="cb"]');
   cb.checked = initial;
-  sw.append(cb, el('span', 'switch-track'), el('span', 'switch-thumb'));
   cb.addEventListener('change', () => onChange(cb.checked));
-  row.append(sw);
   return row;
 }
 
 function muscleSelector(label, selected, onChange) {
-  const wrap = el('div');
-  wrap.style.marginTop = '12px';
-  wrap.append(html('div', 'eyebrow', label));
+  const wrap = document.getElementById('tpl-muscle-selector')
+    .content.firstElementChild.cloneNode(true);
+  wrap.querySelector('[data-field="label"]').textContent = label;
   const sel = new Set(selected);
   for (const [rid, info] of Object.entries(REGIONS)) {
     const muscles = Object.entries(MUSCLES).filter(([, m]) => m.region === rid);
     if (!muscles.length) continue;
-    const region = el('div');
-    region.style.marginTop = '8px';
-    region.append(html('div', 'eyebrow dim', info.label.toUpperCase()));
-    const grid = el('div');
-    grid.style.display = 'flex';
-    grid.style.flexWrap = 'wrap';
-    grid.style.gap = '4px';
-    grid.style.marginTop = '4px';
+    const region = document.getElementById('tpl-muscle-region')
+      .content.firstElementChild.cloneNode(true);
+    region.querySelector('[data-field="region-label"]').textContent = info.label.toUpperCase();
+    const grid = region.querySelector('[data-field="pills"]');
     for (const [mid, m] of muscles) {
-      const c = el('button', 'pill toggle' + (sel.has(mid) ? ' on' : ''));
-      c.type = 'button';
+      const c = document.getElementById('tpl-toggle-pill')
+        .content.firstElementChild.cloneNode(true);
       c.textContent = m.label.toUpperCase();
+      if (sel.has(mid)) c.classList.add('on');
       c.addEventListener('click', () => {
         if (sel.has(mid)) { sel.delete(mid); c.classList.remove('on'); }
         else { sel.add(mid); c.classList.add('on'); }
@@ -275,28 +233,23 @@ function muscleSelector(label, selected, onChange) {
       });
       grid.append(c);
     }
-    region.append(grid);
     wrap.append(region);
   }
   return wrap;
 }
 
 function numField(label, value, onChange, step, decimal = false) {
-  const wrap = el('div');
-  wrap.append(html('div', 'eyebrow', label));
-  const input = document.createElement('input');
-  input.className = 'input input-center';
-  input.type = 'number';
+  const wrap = document.getElementById('tpl-num-field')
+    .content.firstElementChild.cloneNode(true);
+  wrap.querySelector('[data-field="label"]').textContent = label;
+  const input = wrap.querySelector('[data-field="input"]');
   input.inputMode = decimal ? 'decimal' : 'numeric';
   input.step = String(step);
-  input.min = '0';
   input.value = String(value);
-  input.style.marginTop = '6px';
   input.addEventListener('change', () => {
     const v = decimal ? parseFloat(input.value) : parseInt(input.value, 10);
     onChange(isFinite(v) ? Math.max(0, v) : 0);
   });
-  wrap.append(input);
   return wrap;
 }
 
@@ -311,63 +264,24 @@ export function renderExerciseDetail(container, id) {
   const history = exerciseHistory(id);
   const e1rm = bestE1RM(id);
 
-  // Topbar
-  const tb = el('div', 'topbar');
-  tb.classList.add('with-meta');
-  const meta = el('div', 'topbar-meta');
-  const back = document.createElement('button');
-  back.style.background = 'none';
-  back.style.border = 'none';
-  back.style.color = 'var(--ink-soft)';
-  back.style.fontFamily = 'inherit';
-  back.style.fontSize = 'var(--t-xs)';
-  back.style.letterSpacing = '0.12em';
-  back.style.textTransform = 'uppercase';
-  back.style.fontWeight = '700';
-  back.style.padding = '0';
-  back.style.cursor = 'pointer';
-  back.textContent = '‹ LIBRARY';
-  back.addEventListener('click', () => go('library'));
-  meta.append(back);
-  const editBtn = document.createElement('button');
-  editBtn.style.background = 'none';
-  editBtn.style.border = 'none';
-  editBtn.style.color = 'var(--ink-soft)';
-  editBtn.style.fontFamily = 'inherit';
-  editBtn.style.fontSize = 'var(--t-xs)';
-  editBtn.style.letterSpacing = '0.12em';
-  editBtn.style.textTransform = 'uppercase';
-  editBtn.style.fontWeight = '700';
-  editBtn.style.padding = '0';
-  editBtn.style.cursor = 'pointer';
-  editBtn.textContent = 'EDIT';
-  editBtn.addEventListener('click', () => openExerciseEditor(ex));
-  meta.append(editBtn);
-  tb.append(meta);
+  // Markup lives in #tpl-exercise-detail (multi-child fragment) in index.html.
+  const frag = document.getElementById('tpl-exercise-detail').content.cloneNode(true);
 
-  const main = el('div', 'topbar-main');
-  main.append(html('h1', 'title', ex.name));
-  main.append(html('span', 'topbar-sub', `${history.length}W HIST`));
-  tb.append(main);
-  container.append(tb);
-
-  const body = el('div', 'body-pad');
+  frag.querySelector('[data-act="back"]').addEventListener('click', () => go('library'));
+  frag.querySelector('[data-act="edit"]').addEventListener('click', () => openExerciseEditor(ex));
+  frag.querySelector('[data-field="name"]').textContent = ex.name;
+  frag.querySelector('[data-field="hist"]').textContent = `${history.length}W HIST`;
 
   // Tag row
-  const tagRow = el('div');
-  tagRow.style.display = 'flex';
-  tagRow.style.gap = '6px';
-  tagRow.style.flexWrap = 'wrap';
+  const tagRow = frag.querySelector('[data-field="tags"]');
   for (const m of ex.muscles.primary.slice(0, 2)) {
     tagRow.append(pill(MUSCLES[m]?.label.toUpperCase() || m));
   }
   if (ex.bilateral) tagRow.append(pill('PER ARM', 'soft'));
   if (ex.custom) tagRow.append(pill('CUSTOM', 'soft'));
-  body.append(tagRow);
 
   // Stat grid
-  const grid = el('div', 'stat-grid cols-2 two-rows section-mt');
-  grid.style.marginTop = '12px';
+  const grid = frag.querySelector('[data-field="stats"]');
   const best = history.length > 0 ? history.reduce((a, b) => a.e1rm > b.e1rm ? a : b) : null;
   const first = history[0];
   const recent = history[history.length - 1];
@@ -395,21 +309,19 @@ export function renderExerciseDetail(container, id) {
     value: String(history.length),
     sub: recent ? 'LAST · ' + daysAgo(recent.ts) : null,
   }));
-  body.append(grid);
 
   // Chart
-  body.append(divider('EST. 1RM · LAST 16W'));
-  body.append(chartCard(history));
+  frag.querySelector('[data-field="chart"]').replaceWith(chartCard(history));
 
   // History log
-  body.append(divider('HISTORY · LOG'));
+  const log = frag.querySelector('[data-field="log"]');
   if (history.length === 0) {
-    body.append(html('div', 'lib-empty', 'NO SESSIONS YET'));
+    log.append(el('div', 'lib-empty', 'NO SESSIONS YET'));
   } else {
-    for (const h of [...history].reverse().slice(0, 12)) body.append(historyLogRow(h));
+    for (const h of [...history].reverse().slice(0, 12)) log.append(historyLogRow(h));
   }
 
-  container.append(body);
+  container.append(frag);
 }
 
 function eightWeekVolume(exerciseId) {
@@ -446,15 +358,13 @@ function formatKilo(v) {
 /* ── e1RM chart card (last 16w) ──────────────────────────────────── */
 
 function chartCard(history) {
-  const card = el('div', 'chart-card section-mt');
-  card.style.marginTop = '12px';
-
   // Last 16 weeks of data; if fewer points, just plot them.
   const cutoff = Date.now() - 16 * 7 * 86400000;
   const points = history.filter((h) => h.ts >= cutoff).map((h) => ({ ts: h.ts, e1rm: h.e1rm }));
   if (points.length === 0) {
-    card.append(html('div', 'lib-empty', 'NO DATA IN THE LAST 16 WEEKS'));
-    return card;
+    const empty = el('div', 'chart-card chart-card-spaced');
+    empty.append(el('div', 'lib-empty', 'NO DATA IN THE LAST 16 WEEKS'));
+    return empty;
   }
 
   const W = 358, H = 110, pad = 4;
@@ -472,22 +382,15 @@ function chartCard(history) {
   const areaPath = `${path} L ${ptsXY[ptsXY.length - 1][0]} ${H} L ${ptsXY[0][0]} ${H} Z`;
   const last = ptsXY[ptsXY.length - 1];
 
-  // NOW callout
-  const now = el('div', 'now-callout');
-  now.textContent = `NOW · ${Math.round(points[points.length - 1].e1rm)} kg`;
-  card.append(now);
+  const card = document.getElementById('tpl-chart-card')
+    .content.firstElementChild.cloneNode(true);
+  card.querySelector('[data-field="now"]').textContent = `NOW · ${Math.round(points[points.length - 1].e1rm)} kg`;
+  card.querySelector('[data-field="ymax"]').textContent = String(Math.round(maxV));
+  card.querySelector('[data-field="ymid"]').textContent = String(midV);
+  card.querySelector('[data-field="ymin"]').textContent = String(Math.round(minV));
 
-  // Y-axis
-  const yAxis = el('div', 'y-axis');
-  yAxis.append(el('span', null, String(Math.round(maxV))));
-  yAxis.append(el('span', null, String(midV)));
-  yAxis.append(el('span', null, String(Math.round(minV))));
-  card.append(yAxis);
-
-  // SVG
-  const svgWrap = el('div');
-  svgWrap.style.marginTop = '12px';
-  svgWrap.innerHTML = `
+  // SVG geometry is fully computed (numbers only) — kept as innerHTML.
+  card.querySelector('[data-field="svg"]').innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
       <defs>
         <linearGradient id="grad-detail" x1="0" x2="0" y1="0" y2="1">
@@ -506,25 +409,18 @@ function chartCard(history) {
       <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="oklch(0.85 0.18 142)"/>
     </svg>
   `;
-  card.append(svgWrap);
-
-  // X-axis
-  const xAxis = el('div', 'x-axis');
-  xAxis.append(el('span', null, '−16W'));
-  xAxis.append(el('span', null, '−8W'));
-  xAxis.append(el('span', null, 'NOW'));
-  card.append(xAxis);
-
   return card;
 }
 
 
 function historyLogRow(h) {
-  const row = el('div', 'detail-log-row');
-  row.append(el('span', 'date', formatShortDate(h.ts)));
-  row.append(el('span', 'sets', h.sets));
-  row.append(el('span', 'e1rm', `e1RM ${Math.round(h.e1rm)}`));
-  if (h.isPR) row.append(html('span', 'pr', '★ PR'));
-  else row.append(html('span', 'pr empty', '—'));
+  const row = document.getElementById('tpl-history-log-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('[data-field="date"]').textContent = formatShortDate(h.ts);
+  row.querySelector('[data-field="sets"]').textContent = h.sets;
+  row.querySelector('[data-field="e1rm"]').textContent = `e1RM ${Math.round(h.e1rm)}`;
+  const pr = row.querySelector('[data-field="pr"]');
+  if (h.isPR) { pr.className = 'pr'; pr.textContent = '★ PR'; }
+  else { pr.className = 'pr empty'; pr.textContent = '—'; }
   return row;
 }
