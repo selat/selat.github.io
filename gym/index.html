@@ -152,6 +152,65 @@
     </div>
   </template>
 
+  <!-- Workout overview screen (see ui/workout.js renderWorkout). The
+       template holds the screen's top-level siblings directly (no wrapper)
+       so the cloned fragment mounts as direct children of #screen. -->
+  <template id="tpl-workout">
+    <div class="topbar detail-topbar">
+      <button type="button" class="btn-icon lg" data-act="close" aria-label="back to active exercise">×</button>
+      <div class="detail-topbar-title">
+        <div class="eyebrow">CURRENT WORKOUT</div>
+        <div class="title" data-field="split"></div>
+      </div>
+      <div class="detail-topbar-right">
+        <div class="eyebrow">ELAPSED</div>
+        <div class="tnum detail-topbar-value" data-field="elapsed"></div>
+      </div>
+    </div>
+
+    <div class="detail-progress">
+      <div class="row-baseline detail-progress-label">
+        <span><strong data-field="count"></strong> EXERCISES</span>
+        <span data-field="split2"></span>
+      </div>
+      <div class="progress-strip" data-field="bar">
+        <div class="progress-strip-fill" data-field="fill"></div>
+      </div>
+    </div>
+
+    <div class="divider"><span>── PLAN</span><span class="divider-line"></span></div>
+
+    <div class="workout-plan" data-field="plan">
+      <div class="workout-add">
+        <button type="button" class="plan-row workout-add-row" data-act="add">
+          <span class="plan-row-marker workout-add-marker">+</span>
+          <div class="workout-add-label">
+            <div class="workout-add-title">ADD EXERCISE</div>
+            <div class="muted workout-add-sub">Pick from library</div>
+          </div>
+          <span class="plan-row-chev">›</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-footer">
+      <button type="button" class="btn-primary" data-act="finish"><span>FINISH WORKOUT</span><span>→</span></button>
+      <button type="button" class="btn-secondary danger block" data-act="abandon">ABANDON WORKOUT</button>
+    </div>
+  </template>
+
+  <!-- One row of the workout plan; cloned per entry. -->
+  <template id="tpl-plan-row">
+    <div class="plan-row">
+      <span class="plan-row-marker"></span>
+      <div class="plan-row-text">
+        <span class="plan-row-name"></span>
+        <div class="plan-row-result"></div>
+      </div>
+      <span class="plan-row-chev">›</span>
+    </div>
+  </template>
+
   <!-- Settings sheet (see ui/settings.js openSettings). -->
   <template id="tpl-settings">
     <div class="settings">

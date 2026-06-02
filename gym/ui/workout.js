@@ -7,7 +7,7 @@
 import { getActiveSession, endActiveSession, abandonActiveSession, exerciseLabel } from '../data/sessions.js';
 import { sessionSplitTag } from '../data/derived.js';
 import { go } from '../app.js';
-import { el, html, divider, formatDurationPad } from './shared.js';
+import { el, formatDurationPad } from './shared.js';
 import { openExercisePicker, setCurrentEntryIdx } from './session.js';
 import { addEntry } from '../data/sessions.js';
 
@@ -16,117 +16,55 @@ export function renderWorkout(container) {
   const session = getActiveSession();
   if (!session) { go('record'); return; }
 
-  // Top bar — close + workout name + elapsed
-  const tb = el('div', 'topbar detail-topbar');
+  // Markup lives in #tpl-workout in index.html. It's a multi-child fragment
+  // (topbar, progress, divider, plan, footer) that mounts as direct children
+  // of the screen — we query/fill/wire before appending.
+  const frag = document.getElementById('tpl-workout').content.cloneNode(true);
 
-  const close = el('button', 'btn-icon lg');
-  close.textContent = '×';
-  close.setAttribute('aria-label', 'back to active exercise');
-  close.addEventListener('click', () => go('record'));
-  tb.append(close);
-
-  const titleBox = el('div', 'detail-topbar-title');
-  titleBox.append(html('div', 'eyebrow', 'CURRENT WORKOUT'));
-  titleBox.append(html('div', 'title', sessionSplitTag(session)));
-  tb.append(titleBox);
-
-  const elapsedBox = el('div', 'detail-topbar-right');
-  elapsedBox.append(html('div', 'eyebrow', 'ELAPSED'));
-  const elapsed = el('div', 'tnum detail-topbar-value');
-  elapsed.textContent = formatDurationPad(Math.floor((Date.now() - session.startedAt) / 1000));
-  elapsedBox.append(elapsed);
-  tb.append(elapsedBox);
-
-  container.append(tb);
-
-  // Progress strip
   const total = session.entries.length;
   const doneCount = session.entries.filter(entryDone).length;
   const pct = total ? doneCount / total : 0;
-  const progress = el('div', 'detail-progress');
-  const progressLabel = el('div', 'row-baseline detail-progress-label');
-  progressLabel.append(html('span', null, `<strong>${doneCount} / ${total}</strong> EXERCISES`));
-  progressLabel.append(html('span', null, sessionSplitTag(session)));
-  progress.append(progressLabel);
 
-  const bar = el('div', 'progress-strip');
-  const fill = el('div', 'progress-strip-fill');
-  fill.style.width = (pct * 100) + '%';
-  bar.append(fill);
+  // Top bar — close + workout name + elapsed
+  frag.querySelector('[data-act="close"]').addEventListener('click', () => go('record'));
+  frag.querySelector('[data-field="split"]').textContent = sessionSplitTag(session);
+  frag.querySelector('[data-field="elapsed"]').textContent =
+    formatDurationPad(Math.floor((Date.now() - session.startedAt) / 1000));
+
+  // Progress strip
+  frag.querySelector('[data-field="count"]').textContent = `${doneCount} / ${total}`;
+  frag.querySelector('[data-field="split2"]').textContent = sessionSplitTag(session);
+  frag.querySelector('[data-field="fill"]').style.width = (pct * 100) + '%';
+  const bar = frag.querySelector('[data-field="bar"]');
   for (let i = 1; i < total; i++) {
     const tick = el('div', 'progress-strip-tick');
     tick.style.left = ((i / total) * 100) + '%';
     bar.append(tick);
   }
-  progress.append(bar);
-  container.append(progress);
 
-  // Divider + plan
-  container.append(planHeader());
-
-  const plan = el('div');
-  plan.style.flex = '1';
+  // Plan rows — inserted before the ADD EXERCISE row already in the template
+  const plan = frag.querySelector('[data-field="plan"]');
+  const addWrap = plan.querySelector('.workout-add');
   session.entries.forEach((entry, idx) => {
-    plan.append(planRow(entry, idx, doneCount));
+    plan.insertBefore(planRow(entry, idx, doneCount), addWrap);
   });
-
-  // + ADD EXERCISE — wrapped in a padded container so the button (which
-  // shrinks to content-width as a grid-display <button>) can use
-  // width: 100% to fill, while the wrapper provides breathing room
-  // around the dashed border.
-  const addWrap = el('div');
-  addWrap.style.padding = '12px 16px';
-  const addRow = el('button', 'plan-row');
-  addRow.type = 'button';
-  addRow.style.border = '1px dashed var(--line)';
-  addRow.style.width = '100%';
-  addRow.style.gridTemplateColumns = '24px 1fr 14px';
-  const plus = el('span', 'plan-row-marker');
-  plus.textContent = '+';
-  plus.style.color = 'var(--ink-soft)';
-  addRow.append(plus);
-  const addLabel = el('div');
-  addLabel.append(html('div', null, '<strong style="font-size: var(--t-sm); letter-spacing: 0.08em; text-transform: uppercase;">ADD EXERCISE</strong>'));
-  addLabel.append(html('div', 'muted', 'Pick from library'));
-  addLabel.lastChild.style.fontSize = 'var(--t-xs)';
-  addLabel.lastChild.style.marginTop = '2px';
-  addRow.append(addLabel);
-  addRow.append(html('span', 'plan-row-chev', '›'));
-  addRow.addEventListener('click', () => openExercisePicker((exId) => {
-    addEntry(exId);
-  }));
-  addWrap.append(addRow);
-  plan.append(addWrap);
-
-  container.append(plan);
+  frag.querySelector('[data-act="add"]').addEventListener('click', () =>
+    openExercisePicker((exId) => { addEntry(exId); }));
 
   // Finish / abandon workout
-  const footer = el('div', 'detail-footer');
-
-  const finish = el('button', 'btn-primary');
-  finish.innerHTML = '<span>FINISH WORKOUT</span><span>→</span>';
-  finish.addEventListener('click', () => {
+  frag.querySelector('[data-act="finish"]').addEventListener('click', () => {
     if (!confirm('Finish this workout?')) return;
     endActiveSession();
     go('home');
   });
-  footer.append(finish);
-
-  const abandon = el('button', 'btn-secondary danger block');
-  abandon.textContent = 'ABANDON WORKOUT';
-  abandon.addEventListener('click', () => {
+  frag.querySelector('[data-act="abandon"]').addEventListener('click', () => {
     const hasLogged = session.entries.some((e) => e.sets.length > 0);
     if (hasLogged && !confirm('Abandon this session? Logged sets will be discarded.')) return;
     abandonActiveSession();
     go('home');
   });
-  footer.append(abandon);
 
-  container.append(footer);
-}
-
-function planHeader() {
-  return divider('PLAN');
+  container.append(frag);
 }
 
 function entryDone(entry) {
@@ -139,18 +77,14 @@ function planRow(entry, idx, doneCount) {
   let state = 'upcoming';
   if (entryDone(entry)) state = 'done';
   else if (!hasDoneBefore(idx)) state = 'current';
-  const row = el('div', 'plan-row ' + state);
 
-  const marker = el('span', 'plan-row-marker');
-  marker.textContent = state === 'done' ? '✓' : state === 'current' ? '▶' : '○';
-  row.append(marker);
-
-  const text = el('div', 'plan-row-text');
-  text.append(html('span', 'plan-row-name', exerciseLabel(entry.exerciseId)));
-  text.append(html('div', 'plan-row-result', formatEntryResult(entry, state)));
-  row.append(text);
-
-  row.append(html('span', 'plan-row-chev', '›'));
+  const row = document.getElementById('tpl-plan-row')
+    .content.firstElementChild.cloneNode(true);
+  row.classList.add(state);
+  row.querySelector('.plan-row-marker').textContent =
+    state === 'done' ? '✓' : state === 'current' ? '▶' : '○';
+  row.querySelector('.plan-row-name').textContent = exerciseLabel(entry.exerciseId);
+  row.querySelector('.plan-row-result').textContent = formatEntryResult(entry, state);
 
   row.addEventListener('click', () => {
     setCurrentEntryIdx(idx);

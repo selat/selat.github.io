@@ -922,6 +922,24 @@
 .settings-done { margin-top: 14px; }
 
 
+/* ── Workout overview (ADD EXERCISE row) ─────────────────────────── */
+.workout-plan { flex: 1; }
+.workout-add { padding: 12px 16px; }
+.workout-add-row {
+  border: 1px dashed var(--line);
+  width: 100%;
+  grid-template-columns: 24px 1fr 14px;
+}
+.workout-add-marker { color: var(--ink-soft); }
+.workout-add-title {
+  font-weight: 700;
+  font-size: var(--t-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.workout-add-sub { font-size: var(--t-xs); margin-top: 2px; }
+
+
 /* ── Set editor sheet ────────────────────────────────────────────── */
 .set-editor-sub {
   font-size: var(--t-xs);
