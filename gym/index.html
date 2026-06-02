@@ -152,6 +152,46 @@
     </div>
   </template>
 
+  <!-- Settings sheet (see ui/settings.js openSettings). -->
+  <template id="tpl-settings">
+    <div class="settings">
+      <h2 class="eyebrow">SETTINGS</h2>
+
+      <div class="eyebrow settings-section">DISPLAY UNITS</div>
+      <div class="settings-units">
+        <button type="button" class="pill toggle settings-unit" data-unit="kg">KG</button>
+        <button type="button" class="pill toggle settings-unit" data-unit="lb">LB</button>
+      </div>
+      <div class="muted settings-hint">Stored internally as kg; this only changes display.</div>
+
+      <div class="eyebrow settings-section">RECOVERY WINDOWS</div>
+      <div class="settings-grid settings-recovery">
+        <label class="settings-field">
+          <span class="eyebrow">PRIMARY (HRS)</span>
+          <input class="input input-center" type="number" name="recoveryPrimary" inputmode="numeric" min="1" step="1">
+        </label>
+        <label class="settings-field">
+          <span class="eyebrow">SECONDARY (HRS)</span>
+          <input class="input input-center" type="number" name="recoverySecondary" inputmode="numeric" min="1" step="1">
+        </label>
+      </div>
+      <div class="muted settings-hint">Time a primary/secondary muscle hit takes to fully recover. Higher = more conservative suggestions.</div>
+
+      <div class="eyebrow settings-section">DATA</div>
+      <div class="muted settings-hint">Everything is stored in your browser. Export regularly — clearing site data wipes your history.</div>
+      <div class="settings-grid settings-data">
+        <button type="button" class="btn-secondary" data-act="export">EXPORT</button>
+        <button type="button" class="btn-secondary" data-act="import">IMPORT</button>
+      </div>
+
+      <div class="settings-wipe">
+        <button type="button" class="btn-secondary danger settings-wipe-btn" data-act="wipe">⌫ WIPE ALL DATA</button>
+      </div>
+
+      <button type="button" class="btn-primary settings-done" data-act="done">DONE</button>
+    </div>
+  </template>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
