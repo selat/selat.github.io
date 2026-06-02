@@ -250,7 +250,7 @@ function blankSection() {
 
   const left = el('div');
   left.append(html('div', 'template-row-name',
-    '<span class="name">EMPTY WORKOUT</span>'));
+    '<span class="name">CUSTOM WORKOUT</span>'));
   left.append(html('div', 'template-row-muscles', 'No plan · add exercises as you go'));
   card.append(left);
   card.append(html('span', null, '+'));

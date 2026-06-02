@@ -67,7 +67,7 @@ export function sessionSplitTag(session) {
     }
   }
   const entries = Object.entries(regionScore).filter(([, v]) => v > 0);
-  if (entries.length === 0) return 'EMPTY';
+  if (entries.length === 0) return 'CUSTOM';
   entries.sort((a, b) => b[1] - a[1]);
   const top = entries[0];
   const second = entries[1];
