@@ -211,6 +211,47 @@
     </div>
   </template>
 
+  <!-- Body / recovery-map screen (see ui/body.js renderBody). Multi-child
+       fragment (topbar + body-pad) mounted as direct children of #screen. -->
+  <template id="tpl-body">
+    <div class="topbar">
+      <h1 class="title">RECOVERY MAP</h1>
+    </div>
+    <div class="body-pad">
+      <div class="stat-grid cols-3" data-field="summary"></div>
+
+      <div class="body-grid">
+        <div class="body-grid-side">
+          <span class="label">FRONT</span>
+          <div class="diagram" data-field="front"></div>
+        </div>
+        <div class="body-grid-side">
+          <span class="label">BACK</span>
+          <div class="diagram" data-field="back"></div>
+        </div>
+      </div>
+
+      <div class="recovery-legend">
+        <span class="lbl">FRESH</span>
+        <span class="gradient-bar"></span>
+        <span class="lbl">SORE</span>
+      </div>
+
+      <div class="divider"><span>── MOST FATIGUED</span><span class="divider-line"></span></div>
+
+      <div class="recovery-bars" data-field="bars"></div>
+    </div>
+  </template>
+
+  <!-- One row of the "most fatigued" list; cloned per muscle. -->
+  <template id="tpl-body-bar-row">
+    <div class="recovery-bar-row">
+      <span class="lbl"></span>
+      <div class="recovery-bar"><div class="recovery-bar-fill"></div></div>
+      <span class="pct"></span>
+    </div>
+  </template>
+
   <!-- Settings sheet (see ui/settings.js openSettings). -->
   <template id="tpl-settings">
     <div class="settings">

@@ -6,7 +6,7 @@
 
 import { muscleStatus } from '../data/recovery.js';
 import { MUSCLES, MUSCLE_IDS } from '../data/muscles.js';
-import { el, html, divider, statCell } from './shared.js';
+import { statCell } from './shared.js';
 
 // Map design body-diagram region id → list of MUSCLE_IDS in our model.
 // `traps` and `back` are split because the back-view SVG traces them as
@@ -55,11 +55,9 @@ async function renderBodyDiagram(container, view, regionRec) {
 export function renderBody(container) {
   container.replaceChildren();
 
-  const tb = el('div', 'topbar');
-  tb.append(html('h1', 'title', 'RECOVERY MAP'));
-  container.append(tb);
-
-  const body = el('div', 'body-pad');
+  // Markup lives in #tpl-body in index.html (multi-child fragment); we
+  // query/fill/wire before appending.
+  const frag = document.getElementById('tpl-body').content.cloneNode(true);
 
   const status = muscleStatus();
 
@@ -75,63 +73,36 @@ export function renderBody(container) {
   const ready = MUSCLE_IDS.filter((m) => status[m].recovery >= 0.8).length;
   const fatigued = MUSCLE_IDS.filter((m) => status[m].recovery < 0.4).length;
 
-  const summary = el('div', 'stat-grid cols-3');
+  const summary = frag.querySelector('[data-field="summary"]');
   summary.append(statCell({ label: 'WHOLE BODY', value: String(Math.round(wholeBody * 100)), unit: '%' }));
   summary.append(statCell({ label: 'READY', value: String(ready), sub: 'OF ' + MUSCLE_IDS.length + ' GROUPS' }));
   summary.append(statCell({ label: 'FATIGUED', value: String(fatigued), sub: '< 40%' }));
-  body.append(summary);
 
   // Body diagrams — fetched from /assets, painted with regionRec colors.
-  const grid = el('div', 'body-grid section-mt');
-  grid.style.marginTop = '12px';
-  const frontSide = el('div', 'body-grid-side');
-  frontSide.append(html('span', 'label', 'FRONT'));
-  const frontDiagram = el('div', 'diagram');
-  frontSide.append(frontDiagram);
-  grid.append(frontSide);
-
-  const backSide = el('div', 'body-grid-side');
-  backSide.append(html('span', 'label', 'BACK'));
-  const backDiagram = el('div', 'diagram');
-  backSide.append(backDiagram);
-  grid.append(backSide);
-  body.append(grid);
-  renderBodyDiagram(frontDiagram, 'front', regionRec);
-  renderBodyDiagram(backDiagram, 'back', regionRec);
-
-  // Legend — gradient from fresh (gray) to sore (red)
-  const legend = el('div', 'recovery-legend');
-  legend.innerHTML = `
-    <span class="lbl">FRESH</span>
-    <span class="gradient-bar"></span>
-    <span class="lbl">SORE</span>
-  `;
-  body.append(legend);
+  // (Async paint resolves after append; the queried nodes stay valid.)
+  renderBodyDiagram(frag.querySelector('[data-field="front"]'), 'front', regionRec);
+  renderBodyDiagram(frag.querySelector('[data-field="back"]'), 'back', regionRec);
 
   // Most fatigued bars
-  body.append(divider('MOST FATIGUED'));
   const sorted = MUSCLE_IDS.map((m) => ({ id: m, ...status[m], label: MUSCLES[m].label }))
     .sort((a, b) => a.recovery - b.recovery);
-  const bars = el('div', 'recovery-bars');
+  const bars = frag.querySelector('[data-field="bars"]');
   for (const m of sorted.slice(0, 6)) {
     bars.append(barRow(m));
   }
-  body.append(bars);
 
-  container.append(body);
+  container.append(frag);
 }
 
 
 function barRow(m) {
-  const row = el('div', 'recovery-bar-row');
-  row.append(html('span', 'lbl', m.label.toUpperCase()));
-  const bar = el('div', 'recovery-bar');
-  const fill = el('div', 'recovery-bar-fill');
+  const row = document.getElementById('tpl-body-bar-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('.lbl').textContent = m.label.toUpperCase();
+  const fill = row.querySelector('.recovery-bar-fill');
   fill.style.width = (m.recovery * 100) + '%';
   fill.style.background = recoveryHex(m.recovery);
-  bar.append(fill);
-  row.append(bar);
-  row.append(html('span', 'pct', Math.round(m.recovery * 100) + '%'));
+  row.querySelector('.pct').textContent = Math.round(m.recovery * 100) + '%';
   return row;
 }
 

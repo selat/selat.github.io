@@ -718,6 +718,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--surface);
+  margin-top: 12px;
 }
 .body-grid-side .label {
   font-size: var(--t-xs);
