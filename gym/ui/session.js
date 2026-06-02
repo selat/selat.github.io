@@ -28,7 +28,7 @@ import { listExercises, getExercise } from '../data/exercises.js';
 import { getDb } from '../data/storage.js';
 import { lastWorkingSet, lastSetSummary, sessionPRMarks, sessionSplitTag } from '../data/derived.js';
 import { openSheet, go } from '../app.js';
-import { el, html, escapeHtml, pill, formatDuration, formatDurationPad, playChime,
+import { el, html, pill, formatDuration, formatDurationPad, playChime,
          vibrate, setKeepScreenAwake, ensureNotificationPermission, notify } from './shared.js';
 
 const DEFAULT_WORKING_SETS = 3;
@@ -1307,24 +1307,20 @@ function openSetEditor(entryIndex, setIndex) {
   const set = entry?.sets[setIndex];
   if (!set) return;
   openSheet((close) => {
-    const root = el('div', 'set-editor');
-    root.innerHTML = `
-      <h2 class="eyebrow">EDIT SET</h2>
-      <div class="set-editor-sub muted">${escapeHtml(exerciseLabel(entry.exerciseId).toUpperCase())}</div>
-      <div class="grid-2 set-editor-fields">
-        ${numField('WEIGHT (KG)', 'weight', set.weight, '2.5')}
-        ${numField('REPS', 'reps', set.reps, '1')}
-      </div>
-      <div class="set-editor-opts">
-        ${toggleRow('Warmup', 'Excluded from charts and recovery.', 'isWarmup', set.isWarmup)}
-        ${toggleRow('Per-side weight', 'Volume counts both sides.', 'perSide', set.perSide)}
-      </div>
-      <div class="settings-actions set-editor-actions">
-        <button type="button" class="btn-secondary danger" data-act="delete">DELETE</button>
-        <button type="button" class="btn-primary" data-act="save">SAVE</button>
-      </div>`;
-
+    // Markup lives in the #tpl-set-editor <template> in index.html; we
+    // clone it and populate the dynamic bits here. Values are read back
+    // on save via [name] selectors rather than tracked per-keystroke.
+    const root = document.getElementById('tpl-set-editor')
+      .content.firstElementChild.cloneNode(true);
     const field = (name) => root.querySelector(`[name="${name}"]`);
+
+    root.querySelector('.set-editor-sub').textContent =
+      exerciseLabel(entry.exerciseId).toUpperCase();
+    field('weight').value = set.weight;
+    field('reps').value = set.reps;
+    field('isWarmup').checked = set.isWarmup;
+    field('perSide').checked = set.perSide;
+
     root.querySelectorAll('input[type="number"]').forEach((inp) =>
       inp.addEventListener('focus', () => inp.select()));
 
@@ -1345,31 +1341,4 @@ function openSetEditor(entryIndex, setIndex) {
     });
     return root;
   });
-}
-
-/* Markup builders for the set-editor sheet. Return HTML strings so the
-   sheet's structure reads top-to-bottom; values are read back on save
-   via [name] selectors rather than tracked per-keystroke. */
-function numField(label, name, value, step) {
-  const mode = step === '1' ? 'numeric' : 'decimal';
-  return `
-    <label class="num-field">
-      <span class="eyebrow">${label}</span>
-      <input class="input input-lg input-center" type="number" name="${name}"
-             inputmode="${mode}" step="${step}" min="0" value="${escapeHtml(value)}">
-    </label>`;
-}
-
-function toggleRow(label, hint, name, checked) {
-  return `
-    <div class="settings-row">
-      <div class="settings-row-label">
-        <strong>${label}</strong>${hint ? `<small>${hint}</small>` : ''}
-      </div>
-      <label class="switch">
-        <input type="checkbox" name="${name}"${checked ? ' checked' : ''}>
-        <span class="switch-track"></span>
-        <span class="switch-thumb"></span>
-      </label>
-    </div>`;
 }

@@ -77,6 +77,50 @@
   <!-- Sheet host: ui code calls openSheet(node) to mount here. -->
   <div id="sheet-host"></div>
 
+  <!-- Sheet markup. Cloned + populated in JS (see ui/session.js openSetEditor). -->
+  <template id="tpl-set-editor">
+    <div class="set-editor">
+      <h2 class="eyebrow">EDIT SET</h2>
+      <div class="set-editor-sub muted"></div>
+      <div class="grid-2 set-editor-fields">
+        <label class="num-field">
+          <span class="eyebrow">WEIGHT (KG)</span>
+          <input class="input input-lg input-center" type="number" name="weight" inputmode="decimal" step="2.5" min="0">
+        </label>
+        <label class="num-field">
+          <span class="eyebrow">REPS</span>
+          <input class="input input-lg input-center" type="number" name="reps" inputmode="numeric" step="1" min="0">
+        </label>
+      </div>
+      <div class="set-editor-opts">
+        <div class="settings-row">
+          <div class="settings-row-label">
+            <strong>Warmup</strong><small>Excluded from charts and recovery.</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" name="isWarmup">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label">
+            <strong>Per-side weight</strong><small>Volume counts both sides.</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" name="perSide">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-actions set-editor-actions">
+        <button type="button" class="btn-secondary danger" data-act="delete">DELETE</button>
+        <button type="button" class="btn-primary" data-act="save">SAVE</button>
+      </div>
+    </div>
+  </template>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
