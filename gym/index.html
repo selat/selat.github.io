@@ -121,6 +121,25 @@
     </div>
   </template>
 
+  <!-- Exercise picker sheet (see ui/session.js openExercisePicker). -->
+  <template id="tpl-exercise-picker">
+    <div class="exercise-picker">
+      <h2 class="eyebrow">PICK EXERCISE</h2>
+      <input type="search" class="input exercise-picker-search" placeholder="search…">
+      <div class="lib-list exercise-picker-list"></div>
+    </div>
+  </template>
+
+  <!-- One row of the exercise picker; cloned per result. -->
+  <template id="tpl-exercise-row">
+    <button type="button" class="lib-row">
+      <div class="lib-row-head">
+        <div class="lib-row-name"><span class="num"></span> <span class="exercise-name"></span></div>
+      </div>
+      <div class="lib-row-tags"></div>
+    </button>
+  </template>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

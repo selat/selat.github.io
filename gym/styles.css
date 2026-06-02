@@ -921,3 +921,8 @@
   margin-top: 12px;
 }
 .set-editor-actions { margin-top: 16px; }
+
+
+/* ── Exercise picker sheet ───────────────────────────────────────── */
+.exercise-picker-search { margin-top: 10px; }
+.exercise-picker-list { margin-top: 12px; }

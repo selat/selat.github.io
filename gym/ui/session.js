@@ -853,18 +853,13 @@ function emptyState() {
 
 export function openExercisePicker(onPick) {
   openSheet((close) => {
-    const root = document.createElement('div');
-    root.append(html('h2', 'eyebrow', 'PICK EXERCISE'));
-    const search = document.createElement('input');
-    search.type = 'search';
-    search.className = 'input';
-    search.placeholder = 'search…';
-    search.style.marginTop = '10px';
-    root.append(search);
-
-    const list = el('div', 'lib-list section-mt');
-    list.style.marginTop = '12px';
-    root.append(list);
+    // Skeleton + per-row markup live in #tpl-exercise-picker /
+    // #tpl-exercise-row in index.html; clone and populate here.
+    const root = document.getElementById('tpl-exercise-picker')
+      .content.firstElementChild.cloneNode(true);
+    const search = root.querySelector('.exercise-picker-search');
+    const list = root.querySelector('.exercise-picker-list');
+    const rowTpl = document.getElementById('tpl-exercise-row');
 
     const all = listExercises();
     function refresh() {
@@ -872,18 +867,13 @@ export function openExercisePicker(onPick) {
       const filtered = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : all;
       list.replaceChildren();
       filtered.forEach((ex, i) => {
-        const row = el('button', 'lib-row');
-        row.type = 'button';
-        const head = el('div', 'lib-row-head');
-        const name = el('div', 'lib-row-name');
-        name.innerHTML = `<span class="num">${String(i + 1).padStart(2, '0')} ·</span> ${ex.name}`;
-        head.append(name);
-        row.append(head);
-        const tags = el('div', 'lib-row-tags');
+        const row = rowTpl.content.firstElementChild.cloneNode(true);
+        row.querySelector('.num').textContent = `${String(i + 1).padStart(2, '0')} ·`;
+        row.querySelector('.exercise-name').textContent = ex.name;
+        const tags = row.querySelector('.lib-row-tags');
         const primary = ex.muscles.primary[0];
         if (primary) tags.append(pill(primary.toUpperCase().replace(/-/g, ' '), 'default'));
         if (ex.bilateral) tags.append(pill('PER ARM', 'soft'));
-        row.append(tags);
         row.addEventListener('click', () => { close(); onPick(ex.id); });
         list.append(row);
       });
