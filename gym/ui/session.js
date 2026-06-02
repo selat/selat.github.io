@@ -28,7 +28,7 @@ import { listExercises, getExercise } from '../data/exercises.js';
 import { getDb } from '../data/storage.js';
 import { lastWorkingSet, lastSetSummary, sessionPRMarks, sessionSplitTag } from '../data/derived.js';
 import { openSheet, go } from '../app.js';
-import { el, html, pill, formatDuration, formatDurationPad, playChime,
+import { el, html, escapeHtml, pill, formatDuration, formatDurationPad, playChime,
          vibrate, setKeepScreenAwake, ensureNotificationPermission, notify } from './shared.js';
 
 const DEFAULT_WORKING_SETS = 3;
@@ -1306,86 +1306,70 @@ function openSetEditor(entryIndex, setIndex) {
   const entry = session.entries[entryIndex];
   const set = entry?.sets[setIndex];
   if (!set) return;
-  const draft = { ...set };
-
   openSheet((close) => {
-    const root = document.createElement('div');
-    root.append(html('h2', 'eyebrow', 'EDIT SET'));
-    const sub = el('div', 'muted');
-    sub.style.fontSize = 'var(--t-xs)';
-    sub.style.marginBottom = '10px';
-    sub.textContent = exerciseLabel(entry.exerciseId).toUpperCase();
-    root.append(sub);
+    const root = el('div', 'set-editor');
+    root.innerHTML = `
+      <h2 class="eyebrow">EDIT SET</h2>
+      <div class="set-editor-sub muted">${escapeHtml(exerciseLabel(entry.exerciseId).toUpperCase())}</div>
+      <div class="grid-2 set-editor-fields">
+        ${numField('WEIGHT (KG)', 'weight', set.weight, '2.5')}
+        ${numField('REPS', 'reps', set.reps, '1')}
+      </div>
+      <div class="set-editor-opts">
+        ${toggleRow('Warmup', 'Excluded from charts and recovery.', 'isWarmup', set.isWarmup)}
+        ${toggleRow('Per-side weight', 'Volume counts both sides.', 'perSide', set.perSide)}
+      </div>
+      <div class="settings-actions set-editor-actions">
+        <button type="button" class="btn-secondary danger" data-act="delete">DELETE</button>
+        <button type="button" class="btn-primary" data-act="save">SAVE</button>
+      </div>`;
 
-    const grid = el('div', 'grid-2 section-mt');
-    grid.style.gap = '10px';
-    grid.append(numFieldSheet('WEIGHT (KG)', draft.weight, (v) => { draft.weight = v; }, '2.5'));
-    grid.append(numFieldSheet('REPS', draft.reps, (v) => { draft.reps = v; }, '1'));
-    root.append(grid);
+    const field = (name) => root.querySelector(`[name="${name}"]`);
+    root.querySelectorAll('input[type="number"]').forEach((inp) =>
+      inp.addEventListener('focus', () => inp.select()));
 
-    const opts = el('div', 'section-mt');
-    opts.style.marginTop = '12px';
-    opts.style.display = 'flex';
-    opts.style.flexDirection = 'column';
-    opts.append(toggleRow('Warmup', 'Excluded from charts and recovery.', draft.isWarmup,
-      (v) => { draft.isWarmup = v; }));
-    opts.append(toggleRow('Per-side weight', 'Volume counts both sides.', draft.perSide,
-      (v) => { draft.perSide = v; }));
-    root.append(opts);
-
-    const actions = el('div', 'settings-actions section-mt');
-    actions.style.marginTop = '16px';
-    const del = el('button', 'btn-secondary danger');
-    del.textContent = 'DELETE';
-    del.addEventListener('click', () => {
+    root.querySelector('[data-act="delete"]').addEventListener('click', () => {
       close();
       deleteSet(entryIndex, setIndex);
     });
-    actions.append(del);
-    const save = el('button', 'btn-primary');
-    save.textContent = 'SAVE';
-    save.addEventListener('click', () => {
+    root.querySelector('[data-act="save"]').addEventListener('click', () => {
+      const num = (name) => { const v = parseFloat(field(name).value); return isFinite(v) ? v : 0; };
       close();
-      updateSet(entryIndex, setIndex, draft);
+      updateSet(entryIndex, setIndex, {
+        ...set,
+        weight: num('weight'),
+        reps: num('reps'),
+        isWarmup: field('isWarmup').checked,
+        perSide: field('perSide').checked,
+      });
     });
-    actions.append(save);
-    root.append(actions);
     return root;
   });
 }
 
-function numFieldSheet(label, value, onChange, step) {
-  const wrap = el('div');
-  wrap.append(el('div', 'eyebrow', label));
-  const input = document.createElement('input');
-  input.className = 'input input-lg input-center';
-  input.type = 'number';
-  input.inputMode = step === '1' ? 'numeric' : 'decimal';
-  input.step = step;
-  input.min = '0';
-  input.value = String(value);
-  input.style.marginTop = '6px';
-  input.addEventListener('focus', () => input.select());
-  input.addEventListener('input', () => {
-    const v = parseFloat(input.value);
-    onChange(isFinite(v) ? v : 0);
-  });
-  wrap.append(input);
-  return wrap;
+/* Markup builders for the set-editor sheet. Return HTML strings so the
+   sheet's structure reads top-to-bottom; values are read back on save
+   via [name] selectors rather than tracked per-keystroke. */
+function numField(label, name, value, step) {
+  const mode = step === '1' ? 'numeric' : 'decimal';
+  return `
+    <label class="num-field">
+      <span class="eyebrow">${label}</span>
+      <input class="input input-lg input-center" type="number" name="${name}"
+             inputmode="${mode}" step="${step}" min="0" value="${escapeHtml(value)}">
+    </label>`;
 }
 
-function toggleRow(label, hint, initial, onChange) {
-  const row = el('div', 'settings-row');
-  const lbl = el('div', 'settings-row-label');
-  lbl.innerHTML = `<strong>${label}</strong>` + (hint ? `<small>${hint}</small>` : '');
-  row.append(lbl);
-  const sw = document.createElement('label');
-  sw.className = 'switch';
-  const cb = document.createElement('input');
-  cb.type = 'checkbox';
-  cb.checked = initial;
-  sw.append(cb, el('span', 'switch-track'), el('span', 'switch-thumb'));
-  cb.addEventListener('change', () => onChange(cb.checked));
-  row.append(sw);
-  return row;
+function toggleRow(label, hint, name, checked) {
+  return `
+    <div class="settings-row">
+      <div class="settings-row-label">
+        <strong>${label}</strong>${hint ? `<small>${hint}</small>` : ''}
+      </div>
+      <label class="switch">
+        <input type="checkbox" name="${name}"${checked ? ' checked' : ''}>
+        <span class="switch-track"></span>
+        <span class="switch-thumb"></span>
+      </label>
+    </div>`;
 }

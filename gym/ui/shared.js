@@ -21,6 +21,14 @@ export function html(tag, className, htmlStr) {
   return e;
 }
 
+/* Escape a string for safe interpolation into innerHTML templates
+   (exercise names and other user-entered text may contain <, &, "). */
+export function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 export function svg(tag, attrs = {}) {
   const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);

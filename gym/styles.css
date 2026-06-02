@@ -899,3 +899,25 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+
+/* ── Set editor sheet ────────────────────────────────────────────── */
+.set-editor-sub {
+  font-size: var(--t-xs);
+  margin-bottom: 10px;
+}
+.set-editor-fields {
+  margin-top: 16px;
+  gap: 10px;
+}
+.num-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.set-editor-opts {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+.set-editor-actions { margin-top: 16px; }
