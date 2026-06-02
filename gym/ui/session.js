@@ -1116,10 +1116,7 @@ function timedSetsTable(entry, working, hold, activeTargetSec, plannedSets) {
 /* ── Config rows (TARGET HOLD, REST BETWEEN) ────────────────────── */
 
 function configRows(targetSec, restSec, hold) {
-  const wrap = el('div', 'sets-table');
-  wrap.style.marginTop = '8px';
-  wrap.style.display = 'flex';
-  wrap.style.flexDirection = 'column';
+  const wrap = el('div', 'sets-table config-rows');
 
   wrap.append(configRow('TARGET HOLD', targetSec, (delta) => {
     // If no active timer, just nudge the default for the next start.
@@ -1139,46 +1136,18 @@ function configRows(targetSec, restSec, hold) {
 }
 
 function configRow(label, value, onStep) {
-  const row = el('div');
-  row.style.display = 'flex';
-  row.style.alignItems = 'center';
-  row.style.gap = '12px';
-  row.style.padding = '10px 12px';
-  row.style.borderBottom = '1px solid var(--line-soft)';
+  // Markup lives in #tpl-config-row in index.html; clone + wire here.
+  const row = document.getElementById('tpl-config-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('.config-row-label').textContent = label;
+  row.querySelector('.config-row-value').textContent = value + 's';
 
-  const lbl = el('span', 'eyebrow');
-  lbl.style.minWidth = '96px';
-  lbl.textContent = label;
-  row.append(lbl);
-
-  const stepperRow = el('div');
-  stepperRow.style.flex = '1';
-  stepperRow.style.display = 'flex';
-  stepperRow.style.alignItems = 'center';
-  stepperRow.style.gap = '8px';
-
-  const minus = el('button', 'btn-step');
-  minus.textContent = '−';
+  const minus = row.querySelector('[data-act="minus"]');
+  const plus = row.querySelector('[data-act="plus"]');
   minus.setAttribute('aria-label', 'decrease ' + label);
-  minus.addEventListener('click', () => onStep(-15));
-  stepperRow.append(minus);
-
-  const valueEl = el('span', 'tnum');
-  valueEl.style.flex = '1';
-  valueEl.style.textAlign = 'center';
-  valueEl.style.fontSize = 'var(--t-lg)';
-  valueEl.style.fontWeight = '700';
-  valueEl.style.letterSpacing = '-0.02em';
-  valueEl.textContent = value + 's';
-  stepperRow.append(valueEl);
-
-  const plus = el('button', 'btn-step');
-  plus.textContent = '+';
   plus.setAttribute('aria-label', 'increase ' + label);
+  minus.addEventListener('click', () => onStep(-15));
   plus.addEventListener('click', () => onStep(15));
-  stepperRow.append(plus);
-
-  row.append(stepperRow);
   return row;
 }
 

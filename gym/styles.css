@@ -926,3 +926,32 @@
 /* ── Exercise picker sheet ───────────────────────────────────────── */
 .exercise-picker-search { margin-top: 10px; }
 .exercise-picker-list { margin-top: 12px; }
+
+
+/* ── Timed-exercise config rows (TARGET HOLD / REST BETWEEN) ──────── */
+.config-rows {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.config-row-label { min-width: 96px; }
+.config-row-stepper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-row-value {
+  flex: 1;
+  text-align: center;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
