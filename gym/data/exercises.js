@@ -99,7 +99,7 @@ const SEED = [
   { id: 'overhead-press', name: 'Overhead Press', bilateral: false,
     muscles: { primary: ['front-delts', 'side-delts'], secondary: ['triceps', 'upper-back'] },
     defaultRest: 180, defaultWarmupSets: 2, equipmentWeight: 20 },
-  { id: 'seated-db-press', name: 'Seated DB Press', bilateral: true,
+  { id: 'seated-db-press', name: 'Dumbbell Shoulder Press', bilateral: true,
     muscles: { primary: ['front-delts', 'side-delts'], secondary: ['triceps'] },
     defaultRest: 150, defaultWarmupSets: 1 },
   { id: 'arnold-press', name: 'Arnold Press', bilateral: true,
