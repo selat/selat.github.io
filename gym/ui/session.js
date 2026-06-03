@@ -913,16 +913,23 @@ function timedView(session, entry) {
   const isDone = setsDone >= plannedSets && !holdHere;
 
   // Decide the active target seconds for "what's about to / currently happen".
+  // While a hold runs, the live timer is the source of truth. Otherwise a
+  // per-entry timedDraft override (set by the TARGET HOLD / REST BETWEEN
+  // steppers) takes precedence over the base value (last set, else the
+  // exercise default) so the displayed number reflects — and accumulates —
+  // the user's adjustments before they hit START.
   let activeTargetSec, activeRestSec;
   if (holdHere) {
     activeTargetSec = holdHere.targetSec;
     activeRestSec   = holdHere.restSec;
-  } else if (working.length > 0) {
-    activeTargetSec = working[working.length - 1].seconds ?? ex.defaultTargetSec ?? 60;
-    activeRestSec   = ex.defaultRest ?? 60;
   } else {
-    activeTargetSec = ex.defaultTargetSec ?? 60;
-    activeRestSec   = ex.defaultRest ?? 60;
+    const baseTarget = working.length > 0
+      ? (working[working.length - 1].seconds ?? ex.defaultTargetSec ?? 60)
+      : (ex.defaultTargetSec ?? 60);
+    const baseRest = ex.defaultRest ?? 60;
+    const override = timedDraft.entryIndex === currentEntryIdx;
+    activeTargetSec = (override && timedDraft.targetSec != null) ? timedDraft.targetSec : baseTarget;
+    activeRestSec   = (override && timedDraft.restSec   != null) ? timedDraft.restSec   : baseRest;
   }
 
   const wrap = el('div', 'section-mt');
