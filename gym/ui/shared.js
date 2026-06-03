@@ -107,6 +107,13 @@ export function formatTrainTime(seconds) {
   return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 }
 
+/** Compact kilo formatting for volume stats: 12345 → "12.3K", 1234 → "1.23K". */
+export function formatKilo(v) {
+  if (v >= 10000) return (v / 1000).toFixed(1) + 'K';
+  if (v >= 1000)  return (v / 1000).toFixed(2) + 'K';
+  return Math.round(v).toLocaleString();
+}
+
 /** Short "FRI 24" style label for History/recent rows. */
 export function formatShortDate(ms) {
   const d = new Date(ms);

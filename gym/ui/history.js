@@ -9,7 +9,7 @@
 
 import { listSessions, getSession, deleteSession, exerciseLabel, startSession } from '../data/sessions.js';
 import { sessionMusclesLabel, sessionSplitTag, sessionVolume, sessionDurationSec, sessionPRCount, lastNWeeks } from '../data/derived.js';
-import { el, statCell, formatWeight, formatTrainTime, formatShortDate, formatMonth, formatDurationPad } from './shared.js';
+import { el, statCell, formatWeight, formatTrainTime, formatShortDate, formatMonth, formatDurationPad, formatKilo } from './shared.js';
 import { go } from '../app.js';
 
 
@@ -66,12 +66,6 @@ function fillAggregate(grid) {
   grid.append(statCell({ label: 'VOLUME', value: formatKilo(vol), unit: 'kg', size: 'md' }));
   grid.append(statCell({ label: 'SESSIONS', value: String(sessions), size: 'md' }));
   grid.append(statCell({ label: 'TRAIN TIME', value: Math.round(durationSec / 3600) + 'h', size: 'md' }));
-}
-
-function formatKilo(v) {
-  if (v >= 10000) return (v / 1000).toFixed(1) + 'K';
-  if (v >= 1000)  return (v / 1000).toFixed(2) + 'K';
-  return Math.round(v).toLocaleString();
 }
 
 

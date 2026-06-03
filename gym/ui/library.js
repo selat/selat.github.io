@@ -11,7 +11,7 @@ import { MUSCLES, REGIONS } from '../data/muscles.js';
 import { exerciseHistory, lastSetSummary, bestE1RM, sessionVolume, epley } from '../data/derived.js';
 import { listSessions } from '../data/sessions.js';
 import { openSheet, go } from '../app.js';
-import { el, pill, formatShortDate, statCell } from './shared.js';
+import { el, pill, formatShortDate, statCell, formatKilo } from './shared.js';
 
 let searchText = '';
 let activeRegion = null;
@@ -346,12 +346,6 @@ function daysAgo(ts) {
   if (d === 0) return 'TODAY';
   if (d === 1) return '1D';
   return d + 'D';
-}
-
-function formatKilo(v) {
-  if (v >= 10000) return (v / 1000).toFixed(1) + 'K';
-  if (v >= 1000)  return (v / 1000).toFixed(2) + 'K';
-  return Math.round(v).toLocaleString();
 }
 
 

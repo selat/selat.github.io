@@ -6,7 +6,7 @@ import { listSessions } from '../data/sessions.js';
 import { suggestWorkout } from '../data/templates.js';
 import { sessionMusclesLabel, sessionSplitTag, sessionVolume, sessionDurationSec, sessionPRCount, lastNWeeks } from '../data/derived.js';
 import { openSettings } from './settings.js';
-import { el, statCell, formatWeight, formatTrainTime, formatShortDate } from './shared.js';
+import { el, statCell, formatWeight, formatTrainTime, formatShortDate, formatKilo } from './shared.js';
 import { startSessionFlow } from './session.js';
 import { go } from '../app.js';
 
@@ -182,13 +182,6 @@ function fillThisWeek(grid) {
   grid.append(statCell({ label: 'SESSIONS', value: String(w.sessions), size: 'md' }));
   grid.append(statCell({ label: 'TRAIN TIME', value: formatTrainTime(w.durationSec), size: 'md' }));
 }
-
-function formatKilo(v) {
-  if (v >= 10000) return (v / 1000).toFixed(1) + 'K';
-  if (v >= 1000)  return (v / 1000).toFixed(2) + 'K';
-  return Math.round(v).toLocaleString();
-}
-
 
 /* ── Today CTA ──────────────────────────────────────────────────── */
 
