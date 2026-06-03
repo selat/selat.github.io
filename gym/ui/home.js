@@ -6,12 +6,11 @@ import { listSessions } from '../data/sessions.js';
 import { suggestWorkout } from '../data/templates.js';
 import { sessionMusclesLabel, sessionSplitTag, sessionVolume, sessionDurationSec, sessionPRCount, lastNWeeks } from '../data/derived.js';
 import { openSettings } from './settings.js';
-import { el, html, divider, formatWeight, formatTrainTime, formatShortDate } from './shared.js';
+import { el, statCell, formatWeight, formatTrainTime, formatShortDate } from './shared.js';
 import { startSessionFlow } from './session.js';
 import { go } from '../app.js';
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-const DAY_LETTERS = ['M','T','W','T','F','S','S'];
 
 let cursor = null;       // { y, m, d }
 let expanded = false;    // false = week view, true = month view
@@ -86,25 +85,34 @@ export function renderHome(container) {
     dayMap.set(key(d.getFullYear(), d.getMonth(), d.getDate()), s);
   }
 
-  container.append(calendarHeader(today, dayMap, () => renderHome(container)));
-  container.append(thisWeekSection());
-  container.append(todayCtaSection());
-  container.append(recentSection(sessions));
+  // Markup lives in #tpl-home (multi-child fragment) in index.html.
+  const frag = document.getElementById('tpl-home').content.cloneNode(true);
+
+  frag.querySelector('[data-field="cal"]').replaceWith(
+    calendarHeader(today, dayMap, () => renderHome(container)));
+
+  fillThisWeek(frag.querySelector('[data-field="week"]'));
+
+  frag.querySelector('[data-field="today"]').append(todayCta());
+
+  frag.querySelector('[data-field="recent-count"]').textContent = String(sessions.length);
+  fillRecent(frag.querySelector('[data-field="recent"]'), sessions);
+
+  container.append(frag);
 }
 
 
 /* ── Calendar header ─────────────────────────────────────────────── */
 
 function calendarHeader(today, dayMap, rerender) {
-  const wrap = el('div', 'cal-header');
+  const wrap = document.getElementById('tpl-cal-header')
+    .content.firstElementChild.cloneNode(true);
 
-  // Nav row: ‹ MAY 2026 ›  ·  WK 21 / settings / expand
-  const nav = el('div', 'cal-nav');
-  const left = el('div', 'cal-nav-left');
-  const prev = el('button', 'cal-arrow');
-  prev.textContent = '‹';
-  prev.setAttribute('aria-label', 'previous');
-  prev.addEventListener('click', () => {
+  wrap.querySelector('[data-field="label"]').textContent = `${MONTHS[cursor.m]} ${cursor.y}`;
+  wrap.querySelector('[data-field="wk"]').textContent = `WK ${isoWeek(cursor)}`;
+  wrap.querySelector('[data-act="toggle"]').textContent = expanded ? '▴ WEEK' : '▾ MONTH';
+
+  wrap.querySelector('[data-act="prev"]').addEventListener('click', () => {
     if (expanded) {
       const nm = cursor.m - 1;
       const ny = cursor.y + Math.floor(nm / 12);
@@ -115,12 +123,7 @@ function calendarHeader(today, dayMap, rerender) {
     }
     rerender();
   });
-  const label = el('span', 'cal-month-label');
-  label.textContent = `${MONTHS[cursor.m]} ${cursor.y}`;
-  const next = el('button', 'cal-arrow');
-  next.textContent = '›';
-  next.setAttribute('aria-label', 'next');
-  next.addEventListener('click', () => {
+  wrap.querySelector('[data-act="next"]').addEventListener('click', () => {
     if (expanded) {
       const nm = cursor.m + 1;
       const ny = cursor.y + Math.floor(nm / 12);
@@ -131,31 +134,11 @@ function calendarHeader(today, dayMap, rerender) {
     }
     rerender();
   });
-  left.append(prev, label, next);
-
-  const right = el('div', 'cal-nav-right');
-  const wkLabel = el('span', 'cal-wk');
-  wkLabel.textContent = `WK ${isoWeek(cursor)}`;
-  right.append(wkLabel);
-  const toggle = el('button', 'cal-toggle');
-  toggle.textContent = expanded ? '▴ WEEK' : '▾ MONTH';
-  toggle.addEventListener('click', () => { expanded = !expanded; rerender(); });
-  right.append(toggle);
-  const settingsBtn = el('button', 'cal-toggle');
-  settingsBtn.textContent = '☰';
-  settingsBtn.setAttribute('aria-label', 'settings');
-  settingsBtn.addEventListener('click', () => openSettings());
-  right.append(settingsBtn);
-
-  nav.append(left, right);
-  wrap.append(nav);
-
-  // Day letters
-  const letters = el('div', 'cal-day-letters');
-  for (const l of DAY_LETTERS) letters.append(el('span', null, l));
-  wrap.append(letters);
+  wrap.querySelector('[data-act="toggle"]').addEventListener('click', () => { expanded = !expanded; rerender(); });
+  wrap.querySelector('[data-act="settings"]').addEventListener('click', () => openSettings());
 
   // Calendar grid
+  const grid = wrap.querySelector('[data-field="grid"]');
   if (expanded) {
     const cells = getMonth(cursor);
     for (let row = 0; row < 6; row++) {
@@ -163,12 +146,12 @@ function calendarHeader(today, dayMap, rerender) {
       const isCurrentWeek = rowCells.some((c) => isToday(c, today));
       const rowEl = el('div', 'cal-month-row' + (isCurrentWeek ? ' current-week' : ''));
       for (const c of rowCells) rowEl.append(dayCell(c, today, dayMap, true));
-      wrap.append(rowEl);
+      grid.append(rowEl);
     }
   } else {
     const week = el('div', 'cal-week');
     for (const c of getWeek(cursor)) week.append(dayCell(c, today, dayMap, false));
-    wrap.append(week);
+    grid.append(week);
   }
   return wrap;
 }
@@ -177,45 +160,27 @@ function dayCell(day, today, dayMap, compact) {
   const future = isFuture(day, today);
   const isT = isToday(day, today);
   const session = dayMap.get(key(day.y, day.m, day.d));
-  const wrap = el('div', 'cal-day' + (compact ? ' compact' : '')
-    + (day.dim ? ' dim' : '')
-    + (future ? ' future' : '')
-    + (isT ? ' today' : ''));
-  wrap.append(el('span', 'cal-day-num', String(day.d)));
-  const dot = el('span', 'cal-day-dot' + (isT ? ' today' : session && !future ? ' session' : ' empty'));
-  wrap.append(dot);
+  const wrap = document.getElementById('tpl-cal-day')
+    .content.firstElementChild.cloneNode(true);
+  if (compact) wrap.classList.add('compact');
+  if (day.dim) wrap.classList.add('dim');
+  if (future) wrap.classList.add('future');
+  if (isT) wrap.classList.add('today');
+  wrap.querySelector('.cal-day-num').textContent = String(day.d);
+  wrap.querySelector('.cal-day-dot').classList.add(
+    isT ? 'today' : session && !future ? 'session' : 'empty');
   return wrap;
 }
 
 
 /* ── This-week stats ─────────────────────────────────────────────── */
 
-function thisWeekSection() {
-  const wrap = el('div', 'body-pad');
-  wrap.append(divider('THIS WEEK'));
+function fillThisWeek(grid) {
   const weeks = lastNWeeks(1);
   const w = weeks[weeks.length - 1];
-  const grid = el('div', 'stat-grid cols-3');
-  grid.append(statCellShort('VOLUME', formatKilo(w.volume), 'kg'));
-  grid.append(statCellShort('SESSIONS', String(w.sessions)));
-  grid.append(statCellShort('TRAIN TIME', formatTrainTime(w.durationSec)));
-  wrap.append(grid);
-  return wrap;
-}
-
-function statCellShort(label, value, unit) {
-  const cell = el('div', 'stat-cell');
-  const inner = el('div', 'stat stat-md');
-  inner.append(el('span', 'stat-label', label));
-  const row = el('div');
-  row.style.display = 'flex';
-  row.style.alignItems = 'baseline';
-  row.style.gap = '3px';
-  row.append(el('span', 'stat-value', value));
-  if (unit) row.append(el('span', 'stat-unit', unit));
-  inner.append(row);
-  cell.append(inner);
-  return cell;
+  grid.append(statCell({ label: 'VOLUME', value: formatKilo(w.volume), unit: 'kg', size: 'md' }));
+  grid.append(statCell({ label: 'SESSIONS', value: String(w.sessions), size: 'md' }));
+  grid.append(statCell({ label: 'TRAIN TIME', value: formatTrainTime(w.durationSec), size: 'md' }));
 }
 
 function formatKilo(v) {
@@ -227,50 +192,33 @@ function formatKilo(v) {
 
 /* ── Today CTA ──────────────────────────────────────────────────── */
 
-function todayCtaSection() {
-  const wrap = el('div', 'body-pad');
+function todayCta() {
   const suggestion = suggestWorkout();
   if (!suggestion.exerciseIds || suggestion.exerciseIds.length === 0) {
-    const empty = el('div', 'today-cta empty');
-    empty.innerHTML = `<span class="eyebrow">TODAY · REST</span>
-      <p style="margin: 6px 0 0; font-size: var(--t-md);">${suggestion.description}</p>`;
-    wrap.append(empty);
-    return wrap;
+    const rest = document.getElementById('tpl-today-rest')
+      .content.firstElementChild.cloneNode(true);
+    rest.querySelector('[data-field="desc"]').textContent = suggestion.description;
+    return rest;
   }
 
-  const cta = el('div', 'today-cta');
-  // Header
-  const head = el('div', 'row-baseline');
-  head.append(html('span', 'eyebrow', 'TODAY · SUGGESTED'));
-  head.append(html('span', 'eyebrow', estimateMinutes(suggestion) + ' MIN'));
-  cta.append(head);
-
-  // Title + start
-  const titleRow = el('div', 'row-between');
-  titleRow.append(html('span', 'today-cta-title', suggestion.name));
-  const startBtn = el('button', 'today-cta-start');
-  startBtn.textContent = 'START ▶';
-  startBtn.addEventListener('click', () => startSessionFlow(suggestion.exerciseIds));
-  titleRow.append(startBtn);
-  cta.append(titleRow);
-
-  // Why-this-plan (recovery hints)
-  cta.append(whyLine(suggestion));
-
-  wrap.append(cta);
-  return wrap;
+  const cta = document.getElementById('tpl-today-cta')
+    .content.firstElementChild.cloneNode(true);
+  cta.querySelector('[data-field="mins"]').textContent = estimateMinutes(suggestion) + ' MIN';
+  cta.querySelector('[data-field="title"]').textContent = suggestion.name;
+  cta.querySelector('[data-act="start"]').addEventListener('click', () => startSessionFlow(suggestion.exerciseIds));
+  fillWhy(cta.querySelector('[data-field="why"]'), suggestion);
+  return cta;
 }
 
-function whyLine(suggestion) {
-  const line = el('div', 'today-cta-why');
+function fillWhy(line, suggestion) {
   // Show up to 3 recovered muscles by name from the suggestion's exercises.
   if (suggestion.freshRegions && suggestion.freshRegions.length > 0) {
     const labels = suggestion.freshRegions.map((r) => r.toUpperCase()).join(' · ');
-    line.innerHTML = `Targets <span class="good">${labels}</span>`;
+    line.append(document.createTextNode('Targets '));
+    line.append(el('span', 'good', labels));
   } else if (suggestion.description) {
     line.textContent = suggestion.description;
   }
-  return line;
 }
 
 function estimateMinutes(suggestion) {
@@ -282,36 +230,30 @@ function estimateMinutes(suggestion) {
 
 /* ── Recent sessions ─────────────────────────────────────────────── */
 
-function recentSection(sessions) {
-  const wrap = el('div', 'body-pad section-mt');
-  wrap.append(divider('RECENT SESSIONS', String(sessions.length)));
+function fillRecent(box, sessions) {
   const recent = sessions.slice(0, 3);
   if (recent.length === 0) {
-    wrap.append(html('div', 'lib-empty', 'NO SESSIONS YET'));
-    return wrap;
+    box.append(el('div', 'lib-empty', 'NO SESSIONS YET'));
+    return;
   }
-  for (const s of recent) wrap.append(sessionRow(s));
-  return wrap;
+  for (const s of recent) box.append(sessionRow(s));
 }
 
+// Reuses #tpl-session-row (shared with the history timeline).
 function sessionRow(s) {
-  const row = el('button', 'session-row');
-  row.type = 'button';
-  row.append(el('div', 'session-row-date', formatShortDate(s.startedAt)));
-  const main = el('div', 'session-row-main');
-  main.append(el('span', 'session-row-muscles', sessionMusclesLabel(s)));
-  main.append(el('span', 'session-row-chevron', '›'));
-  row.append(main);
-  const meta = el('div', 'session-row-meta');
-  meta.append(el('span', null, `${formatWeight(sessionVolume(s))} ${''}`));
-  meta.append(el('span', 'sep', '·'));
-  meta.append(el('span', null, formatTrainTime(sessionDurationSec(s))));
+  const row = document.getElementById('tpl-session-row')
+    .content.firstElementChild.cloneNode(true);
+  row.querySelector('.session-row-date').textContent = formatShortDate(s.startedAt);
+  row.querySelector('.session-row-muscles').textContent = sessionMusclesLabel(s);
+  row.querySelector('[data-field="vol"]').textContent = formatWeight(sessionVolume(s));
+  row.querySelector('[data-field="time"]').textContent = formatTrainTime(sessionDurationSec(s));
   const prs = sessionPRCount(s);
   if (prs > 0) {
-    meta.append(el('span', 'sep', '·'));
-    meta.append(el('span', 'pr', `+${prs} PR`));
+    row.querySelector('[data-field="pr"]').textContent = `+${prs} PR`;
+  } else {
+    row.querySelector('[data-field="prsep"]').remove();
+    row.querySelector('[data-field="pr"]').remove();
   }
-  row.append(meta);
   row.addEventListener('click', () => go('session/' + s.id));
   return row;
 }

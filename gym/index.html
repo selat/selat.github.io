@@ -252,6 +252,73 @@
     </div>
   </template>
 
+  <!-- Home screen (see ui/home.js renderHome). Multi-child fragment. -->
+  <template id="tpl-home">
+    <div data-field="cal"></div>
+    <div class="body-pad">
+      <div class="divider"><span>── THIS WEEK</span><span class="divider-line"></span></div>
+      <div class="stat-grid cols-3" data-field="week"></div>
+    </div>
+    <div class="body-pad" data-field="today"></div>
+    <div class="body-pad section-mt">
+      <div class="divider"><span>── RECENT SESSIONS</span><span class="divider-line"></span><span class="divider-right" data-field="recent-count"></span></div>
+      <div data-field="recent"></div>
+    </div>
+  </template>
+
+  <!-- Calendar header (week/month). Nav filled + grid built in JS. -->
+  <template id="tpl-cal-header">
+    <div class="cal-header">
+      <div class="cal-nav">
+        <div class="cal-nav-left">
+          <button class="cal-arrow" data-act="prev" aria-label="previous">‹</button>
+          <span class="cal-month-label" data-field="label"></span>
+          <button class="cal-arrow" data-act="next" aria-label="next">›</button>
+        </div>
+        <div class="cal-nav-right">
+          <span class="cal-wk" data-field="wk"></span>
+          <button class="cal-toggle" data-act="toggle"></button>
+          <button class="cal-toggle" data-act="settings" aria-label="settings">☰</button>
+        </div>
+      </div>
+      <div class="cal-day-letters">
+        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+      </div>
+      <div data-field="grid"></div>
+    </div>
+  </template>
+
+  <!-- One calendar day cell; cloned per day. -->
+  <template id="tpl-cal-day">
+    <div class="cal-day">
+      <span class="cal-day-num"></span>
+      <span class="cal-day-dot"></span>
+    </div>
+  </template>
+
+  <!-- TODAY · SUGGESTED inverse CTA. -->
+  <template id="tpl-today-cta">
+    <div class="today-cta">
+      <div class="row-baseline">
+        <span class="eyebrow">TODAY · SUGGESTED</span>
+        <span class="eyebrow" data-field="mins"></span>
+      </div>
+      <div class="row-between">
+        <span class="today-cta-title" data-field="title"></span>
+        <button type="button" class="today-cta-start" data-act="start">START ▶</button>
+      </div>
+      <div class="today-cta-why" data-field="why"></div>
+    </div>
+  </template>
+
+  <!-- TODAY · REST (no suggestion) variant. -->
+  <template id="tpl-today-rest">
+    <div class="today-cta empty">
+      <span class="eyebrow">TODAY · REST</span>
+      <p class="today-rest-desc" data-field="desc"></p>
+    </div>
+  </template>
+
   <!-- History screen (see ui/history.js renderHistory). Multi-child fragment. -->
   <template id="tpl-history">
     <div class="topbar">

@@ -923,6 +923,10 @@
 .settings-done { margin-top: 14px; }
 
 
+/* ── Home screen ─────────────────────────────────────────────────── */
+.today-rest-desc { margin: 6px 0 0; font-size: var(--t-md); }
+
+
 /* ── Library screen ──────────────────────────────────────────────── */
 .lib-list-spaced { margin-top: 14px; }
 .lib-add { margin-top: 12px; }
