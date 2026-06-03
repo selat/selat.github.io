@@ -136,27 +136,13 @@ export function renderSession(container) {
 /* ── Topbar ──────────────────────────────────────────────────────── */
 
 function topbar(session) {
-  const bar = el('div', 'topbar with-meta');
-  const meta = el('div', 'topbar-meta');
-
-  // Split (tap to open workout overview)
-  const splitBtn = document.createElement('button');
-  splitBtn.style.background = 'none';
-  splitBtn.style.border = 'none';
-  splitBtn.style.color = 'var(--ink)';
-  splitBtn.style.fontFamily = 'inherit';
-  splitBtn.style.fontSize = 'var(--t-xs)';
-  splitBtn.style.letterSpacing = '0.10em';
-  splitBtn.style.textTransform = 'uppercase';
-  splitBtn.style.fontWeight = '700';
-  splitBtn.style.padding = '0';
-  splitBtn.style.cursor = 'pointer';
-  splitBtn.innerHTML = `${sessionSplitTag(session)} <span class="muted" style="font-weight: 400; margin-left: 4px;">▾</span>`;
-  splitBtn.addEventListener('click', () => go('workout'));
-  meta.append(splitBtn);
-
-  meta.append(el('span', null, formatElapsed(session.startedAt) + ' ELAPSED'));
-  bar.append(meta);
+  // Markup lives in #tpl-session-topbar in index.html; clone + fill here.
+  const bar = document.getElementById('tpl-session-topbar')
+    .content.firstElementChild.cloneNode(true);
+  bar.querySelector('[data-field="split"]').textContent = sessionSplitTag(session);
+  bar.querySelector('[data-field="elapsed"]').textContent =
+    formatElapsed(session.startedAt) + ' ELAPSED';
+  bar.querySelector('[data-act="split"]').addEventListener('click', () => go('workout'));
   return bar;
 }
 

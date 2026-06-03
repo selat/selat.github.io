@@ -140,6 +140,19 @@
     </button>
   </template>
 
+  <!-- Active-session topbar (split tag → workout overview · elapsed). -->
+  <template id="tpl-session-topbar">
+    <div class="topbar with-meta">
+      <div class="topbar-meta">
+        <button type="button" class="topbar-split" data-act="split">
+          <span data-field="split"></span>
+          <span class="muted topbar-split-caret">▾</span>
+        </button>
+        <span data-field="elapsed"></span>
+      </div>
+    </div>
+  </template>
+
   <!-- Two-span primary action button (label · value); cloned per timed action. -->
   <template id="tpl-action-btn">
     <button type="button" class="btn-primary">

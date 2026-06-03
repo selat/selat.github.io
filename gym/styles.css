@@ -1012,6 +1012,22 @@
 .exercise-picker-list { margin-top: 12px; }
 
 
+/* ── Active-session topbar ───────────────────────────────────────── */
+.topbar-split {
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--t-xs);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+.topbar-split-caret { font-weight: 400; margin-left: 4px; }
+
+
 /* ── Timed-exercise primary action row ───────────────────────────── */
 .timed-action { margin-top: 10px; display: flex; gap: 6px; }
 
