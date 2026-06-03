@@ -251,7 +251,11 @@ function tickHoldTextAndTransitions() {
     }
   }
 
-  countEl.textContent = formatHold(hold.remainingSec);
+  const text = formatHold(hold.remainingSec);
+  countEl.textContent = text;
+  // Keep the action button's countdown (PAUSE HOLD / SKIP REST) in sync.
+  const btnCount = document.getElementById('hold-count');
+  if (btnCount) btnCount.textContent = text;
   lastHoldRemaining = hold.remainingSec;
   lastHoldPhase = hold.phase;
 }
@@ -1177,58 +1181,43 @@ function stashTimedOverride(field, value) {
 /* ── Timed primary action ───────────────────────────────────────── */
 
 function timedAction(entry, hold, isDone, targetSec, restSec) {
-  const wrap = el('div', 'section-mt');
-  wrap.style.marginTop = '10px';
-  wrap.style.display = 'flex';
-  wrap.style.gap = '6px';
+  const wrap = el('div', 'timed-action');
 
   if (isDone) {
     const session = getActiveSession();
     const isLast = session && currentEntryIdx >= session.entries.length - 1;
-    const next = el('button', 'btn-primary');
-    if (isLast) {
-      next.innerHTML = '<span>REVIEW WORKOUT</span><span>→</span>';
-      next.addEventListener('click', () => go('workout'));
-    } else {
-      next.innerHTML = '<span>NEXT EXERCISE</span><span>→</span>';
-      next.addEventListener('click', () => {
-        currentEntryIdx++;
-        resetDraft();
-        timedDraft.entryIndex = null;
-        rerenderFull();
-      });
-    }
-    wrap.append(next);
+    wrap.append(isLast
+      ? actionButton('REVIEW WORKOUT', '→', () => go('workout'))
+      : actionButton('NEXT EXERCISE', '→', () => {
+          currentEntryIdx++;
+          resetDraft();
+          timedDraft.entryIndex = null;
+          rerenderFull();
+        }));
     return wrap;
   }
 
   if (!hold) {
     // READY — start work
-    const start = el('button', 'btn-primary');
-    start.innerHTML = '<span>▶ START SET</span><span>' + targetSec + 's</span>';
-    start.addEventListener('click', () => {
+    wrap.append(actionButton('▶ START SET', targetSec + 's', () => {
       // Use draft override if set, else the active target.
       const t = (timedDraft.entryIndex === currentEntryIdx && timedDraft.targetSec != null) ? timedDraft.targetSec : targetSec;
       const r = (timedDraft.entryIndex === currentEntryIdx && timedDraft.restSec != null) ? timedDraft.restSec : restSec;
       startHold(currentEntryIdx, t, r);
-    });
-    wrap.append(start);
+    }));
     return wrap;
   }
 
   if (hold.phase === 'work') {
-    const main = el('button', 'btn-primary');
-    if (hold.paused) {
-      main.innerHTML = `<span>▶ RESUME</span><span>${formatHold(hold.remainingSec)}</span>`;
-      main.addEventListener('click', () => resumeHold());
-    } else {
-      main.innerHTML = `<span>❚❚ PAUSE HOLD</span><span>${formatHold(hold.remainingSec)}</span>`;
-      main.addEventListener('click', () => pauseHold());
-    }
-    main.style.flex = '1';
+    const main = hold.paused
+      ? actionButton('▶ RESUME', formatHold(hold.remainingSec), () => resumeHold(), 'btn-grow')
+      : actionButton('❚❚ PAUSE HOLD', formatHold(hold.remainingSec), () => pauseHold(), 'btn-grow');
+    // Tag the value span so the rest ticker keeps the countdown live in place.
+    main.querySelector('.action-btn-value').id = 'hold-count';
     wrap.append(main);
 
     const endBtn = el('button', 'btn-secondary');
+    endBtn.type = 'button';
     endBtn.textContent = 'END ✓';
     endBtn.addEventListener('click', () => finishCurrentWorkHold(entry));
     wrap.append(endBtn);
@@ -1236,13 +1225,22 @@ function timedAction(entry, hold, isDone, targetSec, restSec) {
   }
 
   // REST phase
-  const skip = el('button', 'btn-primary');
-  skip.style.background = 'var(--ink)';
-  skip.style.color = 'var(--bg)';
-  skip.innerHTML = `<span>▶ SKIP REST</span><span>${formatHold(hold.remainingSec)}</span>`;
-  skip.addEventListener('click', () => endHoldRest());
+  const skip = actionButton('▶ SKIP REST', formatHold(hold.remainingSec), () => endHoldRest(), 'inverse');
+  skip.querySelector('.action-btn-value').id = 'hold-count';
   wrap.append(skip);
   return wrap;
+}
+
+// Two-span primary action button (label left, value right). Clones
+// #tpl-action-btn; extra class names (btn-grow, btn-dark) are applied as mods.
+function actionButton(label, value, onClick, ...mods) {
+  const b = document.getElementById('tpl-action-btn')
+    .content.firstElementChild.cloneNode(true);
+  b.querySelector('.action-btn-label').textContent = label;
+  b.querySelector('.action-btn-value').textContent = value;
+  for (const m of mods) b.classList.add(m);
+  b.addEventListener('click', onClick);
+  return b;
 }
 
 

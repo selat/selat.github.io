@@ -1012,6 +1012,10 @@
 .exercise-picker-list { margin-top: 12px; }
 
 
+/* ── Timed-exercise primary action row ───────────────────────────── */
+.timed-action { margin-top: 10px; display: flex; gap: 6px; }
+
+
 /* ── Timed-exercise config rows (TARGET HOLD / REST BETWEEN) ──────── */
 .config-rows {
   margin-top: 8px;

@@ -270,6 +270,8 @@ input[type=number] { -moz-appearance: textfield; }
   min-height: 50px;
 }
 .btn-primary.center { justify-content: center; }
+.btn-primary.btn-grow { flex: 1; }
+.btn-primary.inverse { background: var(--ink); color: var(--bg); }
 .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-primary:active   { filter: brightness(0.92); }
 
