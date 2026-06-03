@@ -1252,6 +1252,14 @@ function finishCurrentWorkHold(entry) {
   // Snapshot timer state before mutate so we can log with the right value.
   const hold = getHoldState();
   if (!hold || hold.phase !== 'work') return;
+
+  // Whether this set finishes the plan — read from live state before mutating
+  // (the passed `entry` may be a stale pre-mutation snapshot).
+  const plannedSets = effectivePlannedCount(entry.exerciseId);
+  const workingBefore = (getActiveSession()?.entries[currentEntryIdx]?.sets || [])
+    .filter((s) => !s.isWarmup).length;
+  const isLastSet = workingBefore + 1 >= plannedSets;
+
   const actual = endHoldWork(); // transitions to 'rest', returns actual seconds
   addSet(currentEntryIdx, {
     weight: 0,
@@ -1261,6 +1269,10 @@ function finishCurrentWorkHold(entry) {
     isWarmup: false,
     perSide: !!getExercise(entry.exerciseId)?.bilateral,
   });
+
+  // No rest after the final set — clear the timer so the view goes straight
+  // to the done state (COMPLETE ring · NEXT EXERCISE) instead of a trailing rest.
+  if (isLastSet) clearHold();
 }
 
 
